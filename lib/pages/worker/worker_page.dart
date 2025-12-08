@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:price_book/drawer.dart';
 import '../../config.dart';
-import 'worker_task_objects_page.dart';
+import 'objects_page.dart';
 
 class WorkerPage extends StatefulWidget {
   const WorkerPage({super.key});
@@ -17,11 +17,6 @@ class _WorkerPageState extends State<WorkerPage> {
   List tasks = [];
   bool loading = false;
   String phone = "";
-
-  String getLocalized(dynamic data, String locale) {
-    if (data == null || data is! Map) return "";
-    return data[locale] ?? data["en"] ?? data.values.first.toString();
-  }
 
   Future<void> loadAllTasks() async {
     setState(() => loading = true);
@@ -69,14 +64,68 @@ class _WorkerPageState extends State<WorkerPage> {
     );
   }
 
-  Future<void> _openTask(String taskId) async {
+  Future<void> _openTask(String taskId, int status) async {
+    bool canOpen = await autoChangeStatus(taskId, status);
+    if (!canOpen)
+      return; 
+
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => WorkerTaskObjectsPage(taskId: taskId),
       ),
     );
+
     await loadAllTasks();
+  }
+
+  Future<bool> autoChangeStatus(String taskId, int currentStatus) async {
+    if (currentStatus != 1)
+      return true; // Assigned, если не Assigned, пропускаем проверку
+
+    final pos = await _getPosition();
+
+    final body = {
+      "status": 2, // InProgress
+      "lat": pos.latitude,
+      "lng": pos.longitude,
+    };
+
+    try {
+      final response = await http.put(
+        Uri.parse("$baseUrl/tasks/$taskId/status"),
+        headers: {
+          "Authorization": "Bearer $bearerToken",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return true; // Успешно
+      } else {
+        // Получаем сообщение ошибки
+        String message = "Ошибка обновления статуса";
+        try {
+          final jsonBody = jsonDecode(response.body);
+          if (jsonBody["error"] != null &&
+              jsonBody["error"]["message"] != null) {
+            message = jsonBody["error"]["message"];
+          }
+        } catch (_) {}
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+
+        return false; // Не удалось обновить
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
+      return false;
+    }
   }
 
   @override
@@ -87,13 +136,32 @@ class _WorkerPageState extends State<WorkerPage> {
     });
   }
 
+  int parseStatus(dynamic rawStatus) {
+    if (rawStatus is int) return rawStatus;
+    if (rawStatus is String) {
+      switch (rawStatus) {
+        case "Assigned":
+          return 1;
+        case "InProgress":
+          return 2;
+        case "Completed":
+          return 3;
+        case "Stopped":
+          return 4;
+        case "Canceled":
+          return 5;
+        default:
+          return 0;
+      }
+    }
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final locale = context.locale.languageCode;
-
     return Scaffold(
       drawer: AppDrawer(),
-      appBar: AppBar(title: Text("Задачи")),
+      appBar: AppBar(title: const Text("Задачи")),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: loading
@@ -104,7 +172,7 @@ class _WorkerPageState extends State<WorkerPage> {
                 itemCount: tasks.length,
                 itemBuilder: (context, index) {
                   final t = tasks[index];
-                  final status = t["status"] ?? "Unknown";
+                  final int status = parseStatus(t["status"]);
                   final markets = t["markets"] ?? [];
                   final start =
                       t["startTime"]?.toString().split("T").first ?? "";
@@ -121,15 +189,19 @@ class _WorkerPageState extends State<WorkerPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "ID: ${t["id"]}",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "ID: ${t["id"]}",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              buildStatusBadge(status),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Text("Статус: $status"),
                           const SizedBox(height: 8),
                           Text("Начало: $start"),
                           Text("Дедлайн: $end"),
@@ -166,7 +238,7 @@ class _WorkerPageState extends State<WorkerPage> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: ElevatedButton(
-                              onPressed: () => _openTask(t["id"]),
+                              onPressed: () => _openTask(t["id"], status),
                               child: const Text("Детали"),
                             ),
                           ),
@@ -179,4 +251,41 @@ class _WorkerPageState extends State<WorkerPage> {
       ),
     );
   }
+}
+
+Widget buildStatusBadge(int status) {
+  Color color;
+  final Map<int, String> taskStatuses = {
+    1: "Assigned",
+    2: "InProgress",
+    3: "Completed",
+    4: "Stopped",
+    5: "Canceled",
+  };
+  switch (status) {
+    case 3:
+      color = Colors.green;
+      break;
+    case 4:
+    case 5:
+      color = Colors.red;
+      break;
+    case 2:
+      color = Colors.orange;
+      break;
+    default:
+      color = Colors.blue;
+  }
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      taskStatuses[status] ?? "Unknown",
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    ),
+  );
 }

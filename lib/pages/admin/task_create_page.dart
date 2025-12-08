@@ -145,8 +145,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             Expanded(
               child: ListView(
                 children: workerMarkets.map((m) {
-                  final marketId = m["_id"];
+                  final marketId = m["id"]; // <-- фикс
                   final checked = selectedMarketIds.contains(marketId);
+
                   return CheckboxListTile(
                     title: Text(m["name"] ?? "—"),
                     subtitle: Text(m["address"] ?? ""),

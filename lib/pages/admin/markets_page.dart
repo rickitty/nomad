@@ -65,6 +65,7 @@ class _MarketsPageState extends State<MarketsPage> {
                       children: [
                         Text(m["type"] ?? ""),
                         Text(m["workHours"] ?? ""),
+                        Text(m["id"] ?? ""),
                       ],
                     ),
                   ),

@@ -176,6 +176,7 @@ class _AdminAssignPageState extends State<AdminAssignPage> {
                       Text(market["address"] ?? "Нет адреса"),
                       Text(market["type"] ?? ""),
                       Text("Часы работы: ${market["workHours"] ?? "-"}"),
+                      Text(market["id"] ?? "Нет айди"),
                     ],
                   ),
                   value: checked,
