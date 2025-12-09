@@ -2,7 +2,7 @@
 final baseUrl = 'http://localhost:3000/api';
 final fileBaseUrl = 'http://localhost:3000';
 final String bearerToken =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTA3OGNjZC0yODlmLTQ4YTctOTU0My0yMDViNTllZGE5MTAiLCJsb2dpbiI6Ijc3NzUzNTEzMTMyIiwidXNlckdyb3VwIjoiYWRtaW4iLCJuYmYiOjE3NjUyMjM4NjYsImV4cCI6MTc2NTIyNzQ2NiwiaWF0IjoxNzY1MjIzODY2LCJpc3MiOiJxeXp5bG9yZGFzYyIsImF1ZCI6IndlYiJ9.6XIyRyHeHd2XcT9S0waMG7JA_ims0f1-2GU1OemEvHs';
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmOGU3YTg2ZC0zZTczLTRiYjgtOWM4OC03Zjc4ZDhlODcxMTYiLCJsb2dpbiI6Ijc3NzUzNTEzMTMyIiwidXNlckdyb3VwIjoiYWRtaW4iLCJuYmYiOjE3NjUyMzc3MjUsImV4cCI6MTc2NTI0MTMyNSwiaWF0IjoxNzY1MjM3NzI1LCJpc3MiOiJxeXp5bG9yZGFzYyIsImF1ZCI6IndlYiJ9.K-eWiz_WbVKYgSdi5KFfM0t2gT7e4NDifhE8CLI83Bw';
 
 final createmarket = '$baseUrl/market/create-market';
 final getMarkets = '$baseUrl/market/markets';

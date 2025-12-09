@@ -12,59 +12,313 @@ class WorkerObjectProductsPage extends StatelessWidget {
     required this.objectId,
   });
 
-  @override
+    @override
   Widget build(BuildContext context) {
+    final locale = context.locale.languageCode;
+
+    String getName(dynamic raw) {
+      if (raw == null) return "";
+      if (raw is Map) {
+        return raw[locale] ?? raw["en"] ?? raw.values.first.toString();
+      }
+      return raw.toString();
+    }
+
     final object = taskObjects.firstWhere(
       (obj) => obj["id"] == objectId,
       orElse: () => {},
     );
 
     final goods = (object["goods"] as List?) ?? [];
-    final marketName = object["marketId"] ?? "Неизвестно";
+    final marketName = object["marketId"]?.toString() ?? "Неизвестно";
+    final completedCount =
+        goods.where((g) => (g as Map)["completed"] == true).length;
+    final totalGoods = goods.length;
+    final double progress =
+        totalGoods == 0 ? 0 : completedCount / totalGoods;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Товары")),
-      body: goods.isEmpty
-          ? const Center(child: Text("Нет товаров"))
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: goods.length,
-              itemBuilder: (context, index) {
-                final good = goods[index];
-                final productName =
-                    good["name"][context.locale.languageCode] ??
-                    good["name"]["en"];
-                final completed = good["completed"] ?? false;
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
-                  child: ListTile(
-                    title: Text(productName),
-                    trailing: completed
-                        ? const Text(
-                            "Выполнено",
-                            style: TextStyle(color: Colors.green),
-                          )
-                        : ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CompleteGoodPage(
-                                    taskDetailId: objectId,
-                                    goodId: good["goodId"],
-                                    marketName: marketName,
-                                    productName: productName,
+      appBar: AppBar(
+        title: const Text("Товары"),
+        centerTitle: true,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+               Colors.blue.shade200,
+                Colors.blue.shade200,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color.fromARGB(255, 255, 255, 255),
+              Colors.white,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: goods.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 56,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        "Нет товаров",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Для этого объекта пока нет списка товаров",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header info по объекту
+                    Padding(
+                      padding:
+                          const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                            child: const Icon(
+                              Icons.storefront,
+                              color: Color.fromRGBO(144, 202, 249, 1),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  marketName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              );
-                            },
-                            child: const Text("Выполнить"),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Товаров: $totalGoods, выполнено: $completedCount",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                  ),
-                );
-              },
-            ),
+                        ],
+                      ),
+                    ),
+                    if (totalGoods > 0)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            16, 0, 16, 10),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 6,
+                            backgroundColor: Colors.grey[200],
+                            valueColor: AlwaysStoppedAnimation(
+                              progress >= 1
+                                  ? Colors.green
+                                  : Colors.blueAccent,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    Expanded(
+                      child: ListView.separated(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                            12, 4, 12, 12),
+                        itemCount: goods.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final good =
+                              goods[index] as Map<String, dynamic>;
+                          final productName =
+                              getName(good["name"]).isEmpty
+                                  ? "Без названия"
+                                  : getName(good["name"]);
+                          final completed =
+                              good["completed"] ?? false;
+
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: 1),
+                            duration: Duration(
+                                milliseconds: 220 + index * 40),
+                            builder:
+                                (context, value, child) =>
+                                    Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(
+                                    0, 16 * (1 - value)),
+                                child: child,
+                              ),
+                            ),
+                            child: Card(
+                              elevation: 4,
+                              margin: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(16),
+                              ),
+                              child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(16),
+                                gradient: LinearGradient(
+                                  colors: completed
+                                      ? [
+                                          Colors.green.shade50,
+                                          Colors.white,
+                                        ]
+                                      : [
+                                          Colors.white,
+                                          Colors.blue.shade50,
+                                        ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: ListTile(
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+                                leading: CircleAvatar(
+                                  backgroundColor: completed
+                                      ? Colors.green.shade200
+                                      : Colors.blue.shade200,
+                                  child: Icon(
+                                    completed
+                                        ? Icons.check_rounded
+                                        : Icons.inventory_2_rounded,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                title: Text(
+                                  productName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: completed
+                                    ? const Text(
+                                        "Выполнено",
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontWeight:
+                                              FontWeight.w500,
+                                        ),
+                                      )
+                                    : Text(
+                                        "Ожидает выполнения",
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                trailing: completed
+                                    ? const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                      )
+                                    : ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  CompleteGoodPage(
+                                                taskDetailId:
+                                                    objectId,
+                                                goodId:
+                                                    good["goodId"],
+                                                marketName:
+                                                    marketName,
+                                                productName:
+                                                    productName,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        style: ElevatedButton
+                                            .styleFrom(
+                                              backgroundColor:
+                                                          Colors.blue[300],
+                                                          foregroundColor:
+                                                          Colors.white,
+                                          padding:
+                                              const EdgeInsets
+                                                  .symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          shape:
+                                              RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius
+                                                    .circular(20),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "Выполнить",
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),)
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
     );
   }
+
 }

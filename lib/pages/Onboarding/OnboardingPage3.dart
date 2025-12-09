@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:price_book/auth_wrapper.dart';
 import 'package:price_book/pages/login_screen.dart'; 
 
 import 'onboarding_theme.dart';
@@ -37,7 +38,7 @@ class _OnboardingPage3State extends State<OnboardingPage3> {
   void _goToAuthWrapper(BuildContext context) {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(builder: (context) => const AuthWrapper()),
     );
   }
 

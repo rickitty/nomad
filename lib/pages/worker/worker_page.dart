@@ -81,8 +81,7 @@ class _WorkerPageState extends State<WorkerPage> {
 
   Future<bool> autoChangeStatus(String taskId, int currentStatus) async {
     if (currentStatus != 1)
-      return true; // Assigned, если не Assigned, пропускаем проверку
-
+      return true; 
     final pos = await _getPosition();
 
     final body = {
@@ -118,7 +117,7 @@ class _WorkerPageState extends State<WorkerPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
 
-        return false; // Не удалось обновить
+        return false; 
       }
     } catch (e) {
       ScaffoldMessenger.of(
@@ -157,100 +156,415 @@ class _WorkerPageState extends State<WorkerPage> {
     return 0;
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: AppDrawer(),
-      appBar: AppBar(title: const Text("Задачи")),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: loading
-            ? const Center(child: CircularProgressIndicator())
-            : tasks.isEmpty
-            ? const Center(child: Text("Нет задач"))
-            : ListView.builder(
-                itemCount: tasks.length,
-                itemBuilder: (context, index) {
-                  final t = tasks[index];
-                  final int status = parseStatus(t["status"]);
-                  final markets = t["markets"] ?? [];
-                  final start =
-                      t["startTime"]?.toString().split("T").first ?? "";
-                  final end = t["deadLine"]?.toString().split("T").first ?? "";
-
-                  return Card(
-                    elevation: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      appBar: AppBar(
+        title: const Text("Задачи"),
+        centerTitle: true,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.blue.shade200,
+                Colors.blue.shade200,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color.fromARGB(255, 255, 255, 255),
+              Colors.white,
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Мои задачи",
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Актуальные задания на сегодня",
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "ID: ${t["id"]}",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              buildStatusBadge(status),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text("Начало: $start"),
-                          Text("Дедлайн: $end"),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Маркеты:",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          ...markets.map<Widget>(
-                            (m) => Container(
-                              margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Название: ${m["name"]}",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text("Адрес: ${m["address"]}"),
-                                  Text("Тип: ${m["type"]}"),
-                                  Text("Часы работы: ${m["workHours"]}"),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              onPressed: () => _openTask(t["id"], status),
-                              child: const Text("Детали"),
-                            ),
-                          ),
-                        ],
+                    IconButton(
+                      tooltip: "Обновить",
+                      onPressed: loading ? null : loadAllTasks,
+                      icon: AnimatedRotation(
+                        turns: loading ? 1 : 0,
+                        duration: const Duration(milliseconds: 600),
+                        child: const Icon(Icons.refresh_rounded),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Main content
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : tasks.isEmpty
+                            ? Center(
+                                key: const ValueKey("empty"),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.inbox_rounded,
+                                      size: 56,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                      "Нет задач",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Потяните вниз, чтобы обновить список",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : RefreshIndicator(
+                                key: const ValueKey("list"),
+                                onRefresh: loadAllTasks,
+                                child: ListView.separated(
+                                  physics: const BouncingScrollPhysics(
+                                      parent: AlwaysScrollableScrollPhysics()),
+                                  itemCount: tasks.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 10),
+                                  itemBuilder: (context, index) {
+                                    final t = tasks[index];
+                                    final int status = parseStatus(t["status"]);
+                                    final markets = t["markets"] ?? [];
+                                    final start = t["startTime"]
+                                            ?.toString()
+                                            .split("T")
+                                            .first ??
+                                        "";
+                                    final end = t["deadLine"]
+                                            ?.toString()
+                                            .split("T")
+                                            .first ??
+                                        "";
+
+                                    return TweenAnimationBuilder<double>(
+                                      tween: Tween(begin: 0, end: 1),
+                                      duration: Duration(
+                                          milliseconds: 250 + index * 40),
+                                      builder: (context, value, child) {
+                                        return Opacity(
+                                          opacity: value,
+                                          child: Transform.translate(
+                                            offset: Offset(
+                                                0, 16 * (1 - value)), 
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                      child: Card(
+                                        elevation: 6,
+                                        margin: EdgeInsets.zero,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                        ),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(18),
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.white,
+                                                const Color.fromARGB(255, 255, 255, 255),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                          ),
+                                          padding: const EdgeInsets.all(14),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  CircleAvatar(
+                                                    radius: 18,
+                                                    backgroundColor:
+                                                        Colors.blue.shade100,
+                                                    child: const Icon(
+                                                      Icons.assignment_rounded,
+                                                      size: 20,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "Задача #${t["id"]}",
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 2),
+                                                        Text(
+                                                          "Объектов: ${markets.length}",
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors
+                                                                .grey[700],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  buildStatusBadge(status),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 10),
+
+                                              // Dates row
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.play_arrow_rounded,
+                                                    size: 18,
+                                                    color: Colors.grey,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    "Начало: $start",
+                                                    style: const TextStyle(
+                                                        fontSize: 13),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.flag_rounded,
+                                                    size: 18,
+                                                    color: Colors.grey,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    "Дедлайн: $end",
+                                                    style: const TextStyle(
+                                                        fontSize: 13),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const SizedBox(height: 10),
+
+                                              // Markets summary + expandable details
+                                              if (markets.isNotEmpty)
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            14),
+                                                  ),
+                                                  child: Theme(
+                                                    data: Theme.of(context)
+                                                        .copyWith(
+                                                      dividerColor:
+                                                          Colors.transparent,
+                                                    ),
+                                                    child: ExpansionTile(
+                                                      tilePadding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 0,
+                                                      ),
+                                                      childrenPadding:
+                                                          const EdgeInsets
+                                                              .only(
+                                                              bottom: 8,
+                                                              right: 10,
+                                                              left: 10),
+                                                      title: Row(
+                                                        children: [
+                                                          const Icon(
+                                                            Icons.storefront,
+                                                            size: 18,
+                                                            color:
+                                                                Colors.blue,
+                                                          ),
+                                                          const SizedBox(
+                                                              width: 8),
+                                                          Text(
+                                                            "Маркеты (${markets.length})",
+                                                            style: const TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      children: [
+                                                        ...markets.map<Widget>(
+                                                          (m) => Container(
+                                                            margin:
+                                                                const EdgeInsets
+                                                                        .only(
+                                                                    top: 6),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(8),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: Colors
+                                                                  .blue
+                                                                  .shade50,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
+                                                            ),
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                  "Название: ${m["name"]}",
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                                if (m["address"] !=
+                                                                    null)
+                                                                  Text(
+                                                                      "Адрес: ${m["address"]}"),
+                                                                if (m["type"] !=
+                                                                    null)
+                                                                  Text(
+                                                                      "Тип: ${m["type"]}"),
+                                                                if (m["workHours"] !=
+                                                                    null)
+                                                                  Text(
+                                                                      "Часы работы: ${m["workHours"]}"),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+
+                                              const SizedBox(height: 12),
+
+                                              Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: SizedBox(
+                                                  height: 40,
+                                                  child: ElevatedButton.icon(
+                                                    onPressed: () => _openTask(
+                                                        t["id"], status),
+                                                    icon: const Icon(
+                                                      Icons
+                                                          .arrow_forward_ios_rounded,
+                                                      size: 16,
+                                                    ),
+                                                    label:
+                                                        const Text("Открыть"),
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.blue[300],
+                                                      foregroundColor:
+                                                          Colors.white,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(20),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
+
 }
 
 Widget buildStatusBadge(int status) {

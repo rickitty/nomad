@@ -86,12 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             blurRadius: 18,
                             spreadRadius: 2,
                             offset: const Offset(0, 10),
-                            color: const Color.fromARGB(
-                              255,
-                              107,
-                              123,
-                              177,
-                            ).withOpacity(0.25),
+                            color: const Color.fromRGBO(107, 123, 177, 1).withOpacity(0.25),
                           ),
                         ],
                       ),

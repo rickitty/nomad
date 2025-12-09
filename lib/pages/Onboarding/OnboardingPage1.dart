@@ -32,13 +32,14 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    final screenHeight = size.height;
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
+            // ВЕРХНЯЯ КАРТИНКА — занимает адаптивную высоту
             Animate(
               effects: [
                 FadeEffect(duration: 450.ms, curve: Curves.easeOut),
@@ -49,173 +50,183 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                   curve: Curves.easeOut,
                 ),
               ],
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 height: screenHeight * 0.55,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/StartPage.jpg'),
-                    fit: BoxFit.cover,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/StartPage.jpg'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
             ),
 
+            // НИЖНИЙ БЛОК
             Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                // сам контейнер выезжает снизу и появляется
-                child: Animate(
-                  effects: [
-                    FadeEffect(duration: 350.ms, curve: Curves.easeOut),
-                    MoveEffect(
-                      begin: const Offset(0, 80),
-                      end: Offset.zero,
-                      curve: Curves.easeOutCubic,
-                      duration: 400.ms,
+              child: Animate(
+                effects: [
+                  FadeEffect(duration: 350.ms, curve: Curves.easeOut),
+                  MoveEffect(
+                    begin: const Offset(0, 80),
+                    end: Offset.zero,
+                    curve: Curves.easeOutCubic,
+                    duration: 400.ms,
+                  ),
+                ],
+                child: Container(
+                  width: double.infinity,
+                  // АДАПТИВНАЯ ВЫСОТА: минимум 40% экрана, но не больше 55%
+                  constraints: BoxConstraints(
+                    minHeight: screenHeight * 0.40,
+                    maxHeight: screenHeight * 0.55,
+                  ),
+                  padding: EdgeInsets.fromLTRB(
+                    28,
+                    32,
+                    28,
+                    32 + 24, // +24 снизу под точки-индикатор
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
                     ),
-                  ],
-                  child: Container(
-                    height: screenHeight * 0.45,
-                    width: screenWidth,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 32,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 12,
-                          offset: const Offset(0, -4),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Теглайн
+                      Text(
+                        onboardingTagline.tr(),
+                        style: OnboardingTheme.tag,
+                      )
+                          .animate()
+                          .fadeIn(duration: 350.ms, curve: Curves.easeOut)
+                          .moveY(begin: 10, end: 0, duration: 300.ms),
+
+                      const SizedBox(height: 8),
+
+                      // Заголовок
+                      Text(
+                        onboardingTitle1.tr(),
+                        style: OnboardingTheme.title,
+                      )
+                          .animate()
+                          .fadeIn(delay: 80.ms, duration: 350.ms)
+                          .moveY(begin: 12, end: 0, duration: 300.ms),
+
+                      const SizedBox(height: 14),
+
+                      // Описание
+                      Text(
+                        onboardingDescription1.tr(),
+                        style: OnboardingTheme.body,
+                      )
+                          .animate()
+                          .fadeIn(delay: 140.ms, duration: 350.ms)
+                          .moveY(begin: 14, end: 0, duration: 300.ms),
+
+                      const SizedBox(height: 18),
+
+                      // Подпись "Выберите язык"
+                      Text(
+                        onboardingChooseLanguage.tr(),
+                        style: GoogleFonts.poppins(
+                          textStyle: const TextStyle(
+                            color: Color(0xFF444444),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                      )
+                          .animate()
+                          .fadeIn(delay: 200.ms, duration: 300.ms)
+                          .moveY(begin: 10, end: 0, duration: 250.ms),
 
-                        Text(onboardingTagline.tr(), style: OnboardingTheme.tag)
-                            .animate()
-                            .fadeIn(duration: 350.ms, curve: Curves.easeOut)
-                            .moveY(begin: 10, end: 0, duration: 300.ms),
+                      const SizedBox(height: 10),
 
-                        const SizedBox(height: 8),
+                      // Чипы языков
+                      Row(
+                        children: [
+                          _LanguageChip(
+                            label: 'Қазақша',
+                            selected: _selectedLang == 'kz',
+                            onTap: () => _changeLang('kz'),
+                          ),
+                          const SizedBox(width: 8),
+                          _LanguageChip(
+                            label: 'Русский',
+                            selected: _selectedLang == 'ru',
+                            onTap: () => _changeLang('ru'),
+                          ),
+                          const SizedBox(width: 8),
+                          _LanguageChip(
+                            label: 'English',
+                            selected: _selectedLang == 'en',
+                            onTap: () => _changeLang('en'),
+                          ),
+                        ],
+                      )
+                          .animate()
+                          .fadeIn(delay: 260.ms, duration: 300.ms)
+                          .moveY(begin: 8, end: 0, duration: 250.ms)
+                          .scaleXY(begin: 0.96, end: 1.0, duration: 220.ms),
 
-                        Text(
-                              onboardingTitle1.tr(),
-                              style: OnboardingTheme.title,
-                            )
-                            .animate()
-                            .fadeIn(delay: 80.ms, duration: 350.ms)
-                            .moveY(begin: 12, end: 0, duration: 300.ms),
+                      const Spacer(),
 
-                        const SizedBox(height: 14),
-
-                        Text(
-                              onboardingDescription1.tr(),
-                              style: OnboardingTheme.body,
-                            )
-                            .animate()
-                            .fadeIn(delay: 140.ms, duration: 350.ms)
-                            .moveY(begin: 14, end: 0, duration: 300.ms),
-
-                        const SizedBox(height: 18),
-
-                        Text(
-                              onboardingChooseLanguage.tr(),
-                              style: GoogleFonts.poppins(
-                                textStyle: const TextStyle(
-                                  color: Color(0xFF444444),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                      // КНОПКА "Продолжить"
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          style: OnboardingTheme.primaryButton,
+                          onPressed: () {
+                            widget.controller.nextPage(
+                              duration: const Duration(milliseconds: 400),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: Text(
+                            onboardingContinue.tr(),
+                            style: GoogleFonts.poppins(
+                              textStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
-                            )
+                            ),
+                          ),
+                        )
                             .animate()
-                            .fadeIn(delay: 200.ms, duration: 300.ms)
-                            .moveY(begin: 10, end: 0, duration: 250.ms),
-
-                        const SizedBox(height: 10),
-
-                        Row(
-                              children: [
-                                _LanguageChip(
-                                  label: 'Қазақша',
-                                  selected: _selectedLang == 'kz',
-                                  onTap: () => _changeLang('kz'),
-                                ),
-                                const SizedBox(width: 8),
-                                _LanguageChip(
-                                  label: 'Русский',
-                                  selected: _selectedLang == 'ru',
-                                  onTap: () => _changeLang('ru'),
-                                ),
-                                const SizedBox(width: 8),
-                                _LanguageChip(
-                                  label: 'English',
-                                  selected: _selectedLang == 'en',
-                                  onTap: () => _changeLang('en'),
-                                ),
-                              ],
+                            .fadeIn(
+                              delay: 320.ms,
+                              duration: 500.ms,
+                              curve: Curves.easeOut,
                             )
-                            .animate()
-                            .fadeIn(delay: 260.ms, duration: 300.ms)
-                            .moveY(begin: 8, end: 0, duration: 250.ms)
-                            .scaleXY(begin: 0.96, end: 1.0, duration: 220.ms),
-
-                        const Spacer(),
-
-                        const SizedBox(height: 16),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child:
-                              ElevatedButton(
-                                    style: OnboardingTheme.primaryButton,
-                                    onPressed: () {
-                                      widget.controller.nextPage(
-                                        duration: const Duration(
-                                          milliseconds: 400,
-                                        ),
-                                        curve: Curves.easeInOut,
-                                      );
-                                    },
-                                    child: Text(
-                                      onboardingContinue.tr(),
-                                      style: GoogleFonts.poppins(
-                                        textStyle: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .animate()
-                                  .fadeIn(
-                                    delay: 320.ms,
-                                    duration: 500.ms,
-                                    curve: Curves.easeOut,
-                                  )
-                                  .moveY(
-                                    begin: 30,
-                                    end: 0,
-                                    curve: Curves.easeOut,
-                                  )
-                                  .scaleXY(
-                                    begin: 0.9,
-                                    end: 1.0,
-                                    duration: 400.ms,
-                                  ),
-                        ),
-                      ],
-                    ),
+                            .moveY(
+                              begin: 30,
+                              end: 0,
+                              curve: Curves.easeOut,
+                            )
+                            .scaleXY(
+                              begin: 0.9,
+                              end: 1.0,
+                              duration: 400.ms,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
               ),
