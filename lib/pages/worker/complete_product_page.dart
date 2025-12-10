@@ -1,11 +1,10 @@
 import 'dart:io';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:http_parser/http_parser.dart';
 import '../../config.dart'; // тут должен быть baseUrl
 
 class CompleteGoodPage extends StatefulWidget {
@@ -113,9 +112,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
 
   Future<void> _takePhoto({required bool isProduct}) async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Камера ещё не готова')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Камера ещё не готова')));
       return;
     }
 
@@ -133,9 +132,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     } catch (e) {
       debugPrint('take photo error: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ошибка при съёмке фото')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Ошибка при съёмке фото')));
     }
   }
 
@@ -144,12 +143,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       return Container(
         height: 140,
         color: Colors.grey.shade200,
-        child: Center(
-          child: Text(
-            placeholder,
-            textAlign: TextAlign.center,
-          ),
-        ),
+        child: Center(child: Text(placeholder, textAlign: TextAlign.center)),
       );
     }
 
@@ -164,9 +158,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   // ---------- SAVE (PUT) ----------
   Future<void> _sendData() async {
     if (priceUnitController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите цену')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Введите цену')));
       return;
     }
 
@@ -178,73 +172,93 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     }
 
     if (lat == null || lng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Геолокация не определена')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Геолокация не определена')));
       return;
     }
 
     setState(() => saving = true);
 
     try {
-      final uri = Uri.parse('$baseUrl/api/v1/monitoring/taskDetail/update');
-
+      // 🔹 используем прямой адрес API
+      final uri = Uri.parse("$QYZ_API_BASE/taskDetail/update");
       final request = http.MultipartRequest('PUT', uri);
+      request.headers['Authorization'] = 'Bearer ${Config.bearerToken}';
 
-      // поля
+      // 🔹 Поля
       request.fields['TaskDetailId'] = widget.taskDetailId;
       request.fields['GoodId'] = widget.goodId;
       request.fields['PriceUnit'] = priceUnitController.text.trim();
       request.fields['Lat'] = lat!.toString();
       request.fields['Lng'] = lng!.toString();
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'PhotoProduct',
-          _photoProduct!.path,
-        ),
-      );
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'PhotoPrice',
-          _photoPrice!.path,
-        ),
-      );
+      // 🔹 Файлы
+      if (kIsWeb) {
+        final productBytes = await _photoProduct!.readAsBytes();
+        final priceBytes = await _photoPrice!.readAsBytes();
+
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'PhotoProduct',
+            productBytes,
+            filename: _photoProduct!.name.endsWith('.jpg')
+                ? _photoProduct!.name
+                : '${_photoProduct!.name}.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'PhotoPrice',
+            priceBytes,
+            filename: _photoPrice!.name.endsWith('.jpg')
+                ? _photoPrice!.name
+                : '${_photoPrice!.name}.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'PhotoProduct',
+            _photoProduct!.path,
+          ),
+        );
+        request.files.add(
+          await http.MultipartFile.fromPath('PhotoPrice', _photoPrice!.path),
+        );
+      }
 
       final response = await request.send();
 
       if (!mounted) return;
-
       setState(() => saving = false);
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Товар успешно сохранён')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Товар успешно сохранён')));
         Navigator.of(context).pop(true);
       } else {
         final body = await response.stream.bytesToString();
-        debugPrint(
-            'update taskDetail error: ${response.statusCode} $body');
+        debugPrint('update taskDetail error: ${response.statusCode} $body');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Ошибка сохранения (${response.statusCode})',
-            ),
-          ),
+          SnackBar(content: Text('Ошибка сохранения (${response.statusCode})')),
         );
       }
     } catch (e) {
       debugPrint('sendData exception: $e');
       if (!mounted) return;
       setState(() => saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ошибка сети или сервера')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Ошибка сети или сервера')));
     }
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -255,10 +269,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Colors.blue.shade200,
-                Colors.blue.shade200,
-              ],
+              colors: [Colors.blue.shade200, Colors.blue.shade200],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -284,7 +295,12 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                255,
+                                255,
+                                255,
+                              ),
                               child: const Icon(
                                 Icons.storefront,
                                 color: Color.fromRGBO(144, 202, 249, 1),
@@ -347,7 +363,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                               controller: priceUnitController,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                      decimal: true),
+                                    decimal: true,
+                                  ),
                               decoration: const InputDecoration(
                                 labelText: "Цена (PriceUnit)",
                                 prefixIcon: Icon(Icons.attach_money),
@@ -446,8 +463,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                       children: [
                                         Expanded(
                                           child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             child: _buildPhotoPreview(
                                               _photoProduct,
                                               'Фото товара',
@@ -459,16 +477,17 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                           onPressed: () =>
                                               _takePhoto(isProduct: true),
                                           icon: const Icon(
-                                              Icons.camera_alt_rounded),
+                                            Icons.camera_alt_rounded,
+                                          ),
                                           label: const Text(
-                                              'Сфотографировать товар'),
+                                            'Сфотографировать товар',
+                                          ),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                          Colors.blue[300],
-                                                          foregroundColor:
-                                                          Colors.white,
-                                            minimumSize:
-                                                const Size.fromHeight(40),
+                                            backgroundColor: Colors.blue[300],
+                                            foregroundColor: Colors.white,
+                                            minimumSize: const Size.fromHeight(
+                                              40,
+                                            ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(18),
@@ -484,8 +503,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                       children: [
                                         Expanded(
                                           child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             child: _buildPhotoPreview(
                                               _photoPrice,
                                               'Фото ценника',
@@ -497,16 +517,17 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                           onPressed: () =>
                                               _takePhoto(isProduct: false),
                                           icon: const Icon(
-                                              Icons.camera_alt_rounded),
+                                            Icons.camera_alt_rounded,
+                                          ),
                                           label: const Text(
-                                              'Сфотографировать ценник'),
+                                            'Сфотографировать ценник',
+                                          ),
                                           style: ElevatedButton.styleFrom(
-                                            foregroundColor:
-                                                          Colors.white,
-                                                          backgroundColor:
-                                                          Colors.blue[300],
-                                            minimumSize:
-                                                const Size.fromHeight(40),
+                                            foregroundColor: Colors.white,
+                                            backgroundColor: Colors.blue[300],
+                                            minimumSize: const Size.fromHeight(
+                                              40,
+                                            ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(18),
@@ -536,20 +557,17 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                 height: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.check_rounded),
-                        label: Text(
-                          saving ? "Сохранение..." : "Подтвердить",
-                        ),
+                        label: Text(saving ? "Сохранение..." : "Подтвердить"),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade200,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 18,
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           textStyle: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -568,5 +586,4 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
             ),
     );
   }
-
 }

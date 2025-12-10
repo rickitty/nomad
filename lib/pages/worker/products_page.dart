@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:price_book/pages/worker/complete_product_task_page.dart';
+import 'package:price_book/pages/worker/complete_product_page.dart';
 
 class WorkerObjectProductsPage extends StatelessWidget {
   final List<Map<String, dynamic>> taskObjects;

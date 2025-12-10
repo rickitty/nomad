@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:easy_localization/easy_localization.dart';
@@ -13,41 +12,35 @@ class CreateTaskPage extends StatefulWidget {
 }
 
 class _CreateTaskPageState extends State<CreateTaskPage> {
-  List workers = [];
-  List workerMarkets = [];
+  List markets = [];
+  bool loadingMarkets = true;
 
-  String? selectedWorkerId;
-  String? selectedWorkerPhone;
+  String selectedWorkerPhone = "77753513132"; // статический воркер
   List<String> selectedMarketIds = [];
-
-  List<String> selectedMarketNames = [];
-
   DateTime? selectedDate;
 
   @override
   void initState() {
     super.initState();
-    loadWorkers();
+    loadMarkets();
   }
 
-  // ===================== LOAD WORKERS =====================
-  Future<void> loadWorkers() async {
-    final res = await http.get(Uri.parse(workersUrl));
+  Future<void> loadMarkets() async {
+    setState(() => loadingMarkets = true);
+    final response = await http.get(
+      Uri.parse("$QYZ_API_BASE/markets"),
+      headers: {'Authorization': 'Bearer ${Config.bearerToken}'},
+    );
 
-    if (res.statusCode == 200) {
-      setState(() {
-        workers = jsonDecode(res.body);
-      });
-    } else {
-      print("Failed to load workers: ${res.body}");
+    if (response.statusCode == 200) {
+      markets = json.decode(utf8.decode(response.bodyBytes));
     }
+
+    setState(() => loadingMarkets = false);
   }
 
-  // ===================== SAVE TASK =====================
   Future<void> saveTask() async {
-    if (selectedWorkerPhone == null ||
-        selectedMarketIds.isEmpty ||
-        selectedDate == null) {
+    if (selectedMarketIds.isEmpty || selectedDate == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Заполните все поля")));
@@ -58,35 +51,38 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
     final body = {
       "phoneNumber": selectedWorkerPhone,
-      "marketIds": selectedMarketIds, // <-- теперь ID
+      "marketIds": selectedMarketIds,
       "deadLine": correctedDate.toIso8601String(),
     };
 
-    print("Sending: $body");
+    try {
+      final res = await http.post(
+        Uri.parse(
+          "$QYZ_API_BASE/task/create",
+        ), // прямой URL
+        headers: {
+          "Authorization": "Bearer ${Config.bearerToken}",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(body),
+      );
 
-    final res = await http.post(
-      Uri.parse(createTaskUrl),
-      headers: {
-        "Authorization": "Bearer $bearerToken",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode(body),
-    );
-
-    print("Response: ${res.body}");
-
-    if (res.statusCode == 201 || res.statusCode == 200) {
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Задача создана")));
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Ошибка: ${res.body}")));
+      }
+    } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Задача создана")));
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка: ${res.body}")));
+      ).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
     }
   }
 
-  // ===================== UI =====================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,76 +91,39 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
-            // ---------------- WORKER SELECT ----------------
-            DropdownSearch<Map<String, dynamic>>(
-              items: (String filter, _) async {
-                return workers
-                    .where((w) => (w["phone"] ?? "").contains(filter))
-                    .map((e) => e as Map<String, dynamic>)
-                    .toList();
-              },
-              selectedItem: selectedWorkerId != null
-                  ? workers.firstWhere(
-                      (w) => w["_id"] == selectedWorkerId,
-                      orElse: () => {},
-                    )
-                  : null,
-              compareFn: (a, b) => a["_id"] == b["_id"],
-              popupProps: PopupProps.menu(
-                showSearchBox: true,
-                searchFieldProps: TextFieldProps(
-                  decoration: const InputDecoration(labelText: "Поиск..."),
-                ),
-                itemBuilder: (_, item, __, ___) {
-                  return ListTile(title: Text(item["phone"] ?? ""));
-                },
-              ),
-              dropdownBuilder: (_, item) =>
-                  Text(item == null ? "Выберите работника" : item["phone"]),
-              onChanged: (v) {
-                if (v == null) return;
-
-                setState(() {
-                  selectedWorkerId = v["_id"];
-                  selectedWorkerPhone = v["phone"];
-
-                  workerMarkets = (v["markets"] is List)
-                      ? List<Map<String, dynamic>>.from(v["markets"])
-                      : [];
-
-                  selectedMarketNames = [];
-                });
-
-                print("Worker markets: $workerMarkets");
-              },
+            // ---------------- WORKER ----------------
+            Text(
+              "Работник: $selectedWorkerPhone",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-
             const SizedBox(height: 12),
 
             // ---------------- MARKETS LIST ----------------
-            Expanded(
-              child: ListView(
-                children: workerMarkets.map((m) {
-                  final marketId = m["id"]; // <-- фикс
-                  final checked = selectedMarketIds.contains(marketId);
+            loadingMarkets
+                ? const Center(child: CircularProgressIndicator())
+                : Expanded(
+                    child: ListView(
+                      children: markets.map((m) {
+                        final marketId = m["id"];
+                        final checked = selectedMarketIds.contains(marketId);
 
-                  return CheckboxListTile(
-                    title: Text(m["name"] ?? "—"),
-                    subtitle: Text(m["address"] ?? ""),
-                    value: checked,
-                    onChanged: (v) {
-                      setState(() {
-                        if (v == true) {
-                          selectedMarketIds.add(marketId);
-                        } else {
-                          selectedMarketIds.remove(marketId);
-                        }
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-            ),
+                        return CheckboxListTile(
+                          title: Text(m["name"] ?? "—"),
+                          subtitle: Text(m["address"] ?? ""),
+                          value: checked,
+                          onChanged: (v) {
+                            setState(() {
+                              if (v == true) {
+                                selectedMarketIds.add(marketId);
+                              } else {
+                                selectedMarketIds.remove(marketId);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
 
             const SizedBox(height: 8),
 

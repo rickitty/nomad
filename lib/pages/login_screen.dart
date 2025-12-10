@@ -5,7 +5,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:price_book/config.dart';
 import 'package:price_book/keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -86,7 +85,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             blurRadius: 18,
                             spreadRadius: 2,
                             offset: const Offset(0, 10),
-                            color: const Color.fromRGBO(107, 123, 177, 1).withOpacity(0.25),
+                            color: const Color.fromRGBO(
+                              107,
+                              123,
+                              177,
+                              1,
+                            ).withOpacity(0.25),
                           ),
                         ],
                       ),
@@ -202,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(sendCode),
+        Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/sendcode"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"userName": raw}),
       );
@@ -241,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse(login),
+        Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"username": rawPhone, "code": smsCode}),
       );
@@ -256,10 +260,8 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = jsonDecode(response.body);
 
       final prefs = await SharedPreferences.getInstance();
-
       await prefs.setString("token", data["token"]);
       await prefs.setString("refreshToken", data["refreshToken"]);
-      await prefs.setString("role", data["role"]);
       await prefs.setString(
         "phone",
         _phoneController.text.replaceAll(RegExp(r'\D'), ''),
@@ -267,11 +269,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
+      // Навигация без передачи роли
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(roleFromLogin: data["role"]),
-        ),
+        MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } catch (e, st) {
       print("Login exception: $e\n$st");

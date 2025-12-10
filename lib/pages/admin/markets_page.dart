@@ -17,13 +17,26 @@ class _MarketsPageState extends State<MarketsPage> {
 
   Future<void> loadMarkets() async {
     setState(() => loading = true);
-    final response = await http.get(
-      Uri.parse(getMarkets),
-      headers: {'Authorization': 'Bearer $bearerToken'},
-    );
 
-    if (response.statusCode == 200) {
-      markets = json.decode(utf8.decode(response.bodyBytes));
+    try {
+      final response = await http.get(
+        Uri.parse(
+          "$QYZ_API_BASE/markets",
+        ),
+        headers: {'Authorization': 'Bearer ${Config.bearerToken}'},
+      );
+
+      if (response.statusCode == 200) {
+        markets = json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        print(
+          "Ошибка при загрузке рынков: ${response.statusCode} ${response.body}",
+        );
+        markets = [];
+      }
+    } catch (e) {
+      print("Exception при загрузке рынков: $e");
+      markets = [];
     }
 
     setState(() => loading = false);

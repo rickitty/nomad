@@ -1,10 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:price_book/pages/admin/admin_assign_page.dart';
+import 'package:price_book/config.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/admin/markets_page.dart';
+import 'package:price_book/pages/admin/task_create_page.dart';
+import 'package:price_book/pages/admin/task_list_page.dart';
 import 'package:price_book/pages/login_screen.dart';
 import 'package:price_book/pages/my_profile_page.dart';
+import 'package:price_book/pages/worker/worker_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -19,37 +22,106 @@ class AppDrawer extends StatelessWidget {
           return Drawer(child: Center(child: CircularProgressIndicator()));
         }
 
-        final prefs = snapshot.data!;
-        final role = prefs.getString("role") ?? "worker";
-
         return Drawer(
           child: ListView(
             children: [
               DrawerHeader(
                 child: Text(menu.tr(), style: TextStyle(fontSize: 22)),
               ),
-              if (role == 'admin')
-                ListTile(
-                  leading: const Icon(Icons.assignment_add),
-                  title: Text(assigningObjects.tr()),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => AdminAssignPage()),
+              // if (role == 'admin')
+              //   ListTile(
+              //     leading: const Icon(Icons.assignment_add),
+              //     title: Text(assigningObjects.tr()),
+              //     onTap: () {
+              //       Navigator.push(
+              //         context,
+              //         MaterialPageRoute(builder: (_) => AdminAssignPage()),
+              //       );
+              //     },
+              //   ),
+              // if (role == 'admin')
+              ListTile(
+                leading: const Icon(Icons.task),
+                title: Text("Мои задачи"),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => WorkerPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.add_box),
+                title: Text("Create task"),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => CreateTaskPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.store),
+                title: Text("Markets"),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => MarketsPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: Text("Смена статуса задач"),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => TaskListPage()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.vpn_key),
+                title: Text("Update Token"),
+                onTap: () async {
+                  final TextEditingController tokenController =
+                      TextEditingController();
+
+                  final newToken = await showDialog<String>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text("Enter new token"),
+                      content: TextField(
+                        controller: tokenController,
+                        decoration: const InputDecoration(
+                          hintText: "Bearer token",
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(
+                            context,
+                            tokenController.text.trim(),
+                          ),
+                          child: const Text("Save"),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (newToken != null && newToken.isNotEmpty) {
+                    await Config.updateToken(newToken);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Token updated!")),
                     );
-                  },
-                ),
-              if (role == 'admin')
-                ListTile(
-                  leading: const Icon(Icons.store),
-                  title: Text("Markets"),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => MarketsPage()),
-                    );
-                  },
-                ),
+                  }
+                },
+              ),
               ListTile(
                 leading: Icon(Icons.person),
                 title: Text(myProfile.tr()),
@@ -91,13 +163,13 @@ class AppDrawer extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              title: Text("Қазақша"),
-              onTap: () {
-                context.setLocale(Locale('kz'));
-                Navigator.pop(context);
-              },
-            ),
+            // ListTile(
+            //   title: Text("Қазақша"),
+            //   onTap: () {
+            //     context.setLocale(Locale('kz'));
+            //     Navigator.pop(context);
+            //   },
+            // ),
             ListTile(
               title: Text("English"),
               onTap: () {

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:price_book/keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:price_book/config.dart';
 
 class MyProfilePage extends StatefulWidget {
   const MyProfilePage({super.key});
@@ -35,7 +34,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
 
     Future<Map<String, dynamic>?> requestProfile() async {
       final res = await http.get(
-        Uri.parse(profileUrl),
+        Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/profile"),
         headers: {"Authorization": "Bearer $token"},
       );
 
@@ -46,7 +45,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
       if (res.statusCode == 401 && refresh != null) {
         // refresh
         final r = await http.post(
-          Uri.parse(refreshToken),
+          Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/refresh"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({"token": token, "refreshToken": refresh}),
         );
@@ -60,7 +59,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
 
           // повторяем запрос
           final retry = await http.get(
-            Uri.parse(profileUrl),
+            Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/profile"),
             headers: {"Authorization": "Bearer $token"},
           );
 
@@ -85,9 +84,12 @@ class _MyProfilePageState extends State<MyProfilePage> {
     String? img = profile?["imageUrl"];
     String? fullUrl;
     if (img != null && img.isNotEmpty) {
+      // Берём путь после /api/v1/files
       final path = img.split("/api/v1/files").last;
-      fullUrl = "$fileBaseUrl/api/proxy$path";
+      // Используем полный адрес сервера сразу
+      fullUrl = "https://smartqyzylorda.curs.kz/api/v1/files$path";
     }
+
     return Scaffold(
       appBar: AppBar(title: Text(myProfile.tr())),
       body: loading

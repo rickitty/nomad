@@ -4,17 +4,20 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:price_book/auth_wrapper.dart';
-import 'package:price_book/pages/login_screen.dart'; 
 
 import 'onboarding_theme.dart';
 import 'package:price_book/keys.dart';
-// import 'package:price_book/auth_wrapper.dart'; 
+// import 'package:price_book/auth_wrapper.dart';
 
 class OnboardingPage3 extends StatefulWidget {
   final PageController controller;
+  final Future<void> Function() onFinish;
 
-  const OnboardingPage3({super.key, required this.controller, required Future<void> Function() onFinish});
+  const OnboardingPage3({
+    super.key,
+    required this.controller,
+    required this.onFinish,
+  });
 
   @override
   State<OnboardingPage3> createState() => _OnboardingPage3State();
@@ -25,21 +28,20 @@ class _OnboardingPage3State extends State<OnboardingPage3> {
 
   Future<void> _requestLocationPermission() async {
     if (kIsWeb) {
+      if (!mounted) return;
       setState(() {
-        _locationGranted = null; 
+        _locationGranted = null;
       });
       return;
     }
 
     final status = await Permission.locationWhenInUse.request();
+    if (!mounted) return;
     setState(() => _locationGranted = status.isGranted);
   }
 
-  void _goToAuthWrapper(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const AuthWrapper()),
-    );
+  Future<void> _finish() async {
+    await widget.onFinish();
   }
 
   @override
@@ -134,32 +136,33 @@ class _OnboardingPage3State extends State<OnboardingPage3> {
                     SizedBox(
                       width: double.infinity,
                       height: 52,
-                      child: ElevatedButton(
-                        style: OnboardingTheme.primaryButton,
-                        onPressed: () async {
-                          await _requestLocationPermission();
-                          _goToAuthWrapper(context);
-                        },
-                        child: Text(
-                          onboardingLocationButton.tr(),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      )
-                          .animate()
-                          .fadeIn(duration: 500.ms, curve: Curves.easeOut)
-                          .moveY(begin: 30, end: 0, curve: Curves.easeOut)
-                          .scaleXY(begin: 0.9, end: 1.0, duration: 400.ms),
+                      child:
+                          ElevatedButton(
+                                style: OnboardingTheme.primaryButton,
+                                onPressed: () async {
+                                  await _requestLocationPermission();
+                                  await _finish();
+                                },
+                                child: Text(
+                                  onboardingLocationButton.tr(),
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    textStyle: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .animate()
+                              .fadeIn(duration: 500.ms, curve: Curves.easeOut)
+                              .moveY(begin: 30, end: 0, curve: Curves.easeOut)
+                              .scaleXY(begin: 0.9, end: 1.0, duration: 400.ms),
                     ),
 
                     TextButton(
-                      onPressed: () => _goToAuthWrapper(context),
+                      onPressed: () async => await _finish(),
                       child: Text(
                         onboardingContinueWithoutLocation.tr(),
                         style: OnboardingTheme.smallInfo,

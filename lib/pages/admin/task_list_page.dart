@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:price_book/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/admin/task_details_page.dart';
 import '../../config.dart';
@@ -40,9 +41,9 @@ class _TaskListPageState extends State<TaskListPage> {
 
     try {
       final res = await http.get(
-        Uri.parse(alltasks),
+        Uri.parse("$QYZ_API_BASE/task"), // полный URL
         headers: {
-          "Authorization": "Bearer $bearerToken",
+          "Authorization": "Bearer ${Config.bearerToken}",
           "Content-Type": "application/json",
         },
       );
@@ -107,9 +108,11 @@ class _TaskListPageState extends State<TaskListPage> {
       };
 
       final response = await http.put(
-        Uri.parse("$baseUrl/tasks/$taskId/status"),
+        Uri.parse(
+          "$QYZ_API_BASE/task/$taskId",
+        ), // полный URL
         headers: {
-          "Authorization": "Bearer $bearerToken",
+          "Authorization": "Bearer ${Config.bearerToken}",
           "Content-Type": "application/json",
         },
         body: jsonEncode(body),
@@ -180,192 +183,200 @@ class _TaskListPageState extends State<TaskListPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      loadAllTasks();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Config.loadToken(); // <- загружаем токен
+      await loadAllTasks(); // <- теперь токен уже есть
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          TextField(
-            decoration: InputDecoration(
-              labelText: searchByPhone.tr(),
-              border: const OutlineInputBorder(),
-            ),
-            onChanged: (v) => phone = v,
-          ),
-          const SizedBox(height: 10),
-
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: loadAllTasks,
-                  child: Text(allTasks.tr()),
-                ),
+    return Scaffold(
+      drawer: AppDrawer(),
+      appBar: AppBar(title: Text("Смена статуса задач")),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                labelText: searchByPhone.tr(),
+                border: const OutlineInputBorder(),
               ),
-            ],
-          ),
+              onChanged: (v) => phone = v,
+            ),
+            const SizedBox(height: 10),
 
-          const SizedBox(height: 20),
-          if (loading) const CircularProgressIndicator(),
-
-          Expanded(
-            child: tasks.isEmpty && !loading
-                ? Center(child: Text('Нет задач'))
-                : ListView.builder(
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      final t = tasks[index];
-
-                      final status = t["status"] ?? "Unknown";
-                      final markets = t["markets"] ?? [];
-                      final start =
-                          t["startTime"]?.toString().split("T").first ?? "";
-                      final end =
-                          t["deadLine"]?.toString().split("T").first ?? "";
-
-                      return Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // ID + статус
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "ID: ${t["id"]}",
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _showStatusDialog(t["id"]),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: status == "Completed"
-                                            ? Colors.green
-                                            : status == "Stopped"
-                                            ? Colors.red
-                                            : Colors.orange,
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        status,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 12),
-
-                              // Даты
-                              Text(
-                                "Начало: $start",
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                              Text(
-                                "Дедлайн: $end",
-                                style: const TextStyle(fontSize: 14),
-                              ),
-
-                              const SizedBox(height: 12),
-
-                              // Маркеты
-                              const Text(
-                                "Маркеты:",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-
-                              ...markets.map<Widget>((m) {
-                                return Container(
-                                  margin: const EdgeInsets.only(top: 8),
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Название: ${m["name"]}",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text("Адрес: ${m["address"]}"),
-                                      Text("Тип: ${m["type"]}"),
-                                      Text("Часы работы: ${m["workHours"]}"),
-                                    ],
-                                  ),
-                                );
-                              }),
-
-                              const SizedBox(height: 12),
-
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              TaskDetailsPage(taskId: t["id"]),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text("Детали"),
-                                  ),
-                                  // IconButton(
-                                  //   icon: const Icon(Icons.edit),
-                                  //   onPressed: () async {
-                                  //     await Navigator.push(
-                                  //       context,
-                                  //       MaterialPageRoute(
-                                  //         builder: (_) => EditTaskPage(task: t),
-                                  //       ),
-                                  //     );
-                                  //   },
-                                  // ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: loadAllTasks,
+                    child: Text(allTasks.tr()),
                   ),
-          ),
-        ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+            if (loading) const CircularProgressIndicator(),
+
+            Expanded(
+              child: tasks.isEmpty && !loading
+                  ? Center(child: Text('Нет задач'))
+                  : ListView.builder(
+                      itemCount: tasks.length,
+                      itemBuilder: (context, index) {
+                        final t = tasks[index];
+
+                        final status = t["status"] ?? "Unknown";
+                        final markets = t["markets"] ?? [];
+                        final start =
+                            t["startTime"]?.toString().split("T").first ?? "";
+                        final end =
+                            t["deadLine"]?.toString().split("T").first ?? "";
+
+                        return Card(
+                          elevation: 3,
+                          margin: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // ID + статус
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "ID: ${t["id"]}",
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => _showStatusDialog(t["id"]),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: status == "Completed"
+                                              ? Colors.green
+                                              : status == "Stopped"
+                                              ? Colors.red
+                                              : Colors.orange,
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          status,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Даты
+                                Text(
+                                  "Начало: $start",
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                Text(
+                                  "Дедлайн: $end",
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // Маркеты
+                                const Text(
+                                  "Маркеты:",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+
+                                ...markets.map<Widget>((m) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(top: 8),
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade50,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Название: ${m["name"]}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text("Адрес: ${m["address"]}"),
+                                        Text("Тип: ${m["type"]}"),
+                                        Text("Часы работы: ${m["workHours"]}"),
+                                      ],
+                                    ),
+                                  );
+                                }),
+
+                                const SizedBox(height: 12),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => TaskDetailsPage(
+                                              taskId: t["id"],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text("Детали"),
+                                    ),
+                                    // IconButton(
+                                    //   icon: const Icon(Icons.edit),
+                                    //   onPressed: () async {
+                                    //     await Navigator.push(
+                                    //       context,
+                                    //       MaterialPageRoute(
+                                    //         builder: (_) => EditTaskPage(task: t),
+                                    //       ),
+                                    //     );
+                                    //   },
+                                    // ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

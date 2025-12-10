@@ -25,8 +25,23 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
   Future<void> createMarket() async {
     setState(() => loading = true);
 
+    // Проверка URL и токена
+    if (QYZ_API_BASE.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ошибка: базовый URL не задан")),
+      );
+      setState(() => loading = false);
+      return;
+    }
+    if (Config.bearerToken.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Ошибка: токен не задан")));
+      setState(() => loading = false);
+      return;
+    }
+
     final Map<String, dynamic> body = {
-      "token": bearerToken,
       "name": _name.text,
       "address": _address.text,
       "location": {
@@ -40,8 +55,11 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
 
     try {
       final response = await http.post(
-        Uri.parse(createmarket),
-        headers: {"Content-Type": "application/json"},
+        Uri.parse("$QYZ_API_BASE/market/create"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${Config.bearerToken}",
+        },
         body: json.encode(body),
       );
 
@@ -59,7 +77,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
+      ).showSnackBar(SnackBar(content: Text("Ошибка сети: $e")));
     }
 
     setState(() => loading = false);

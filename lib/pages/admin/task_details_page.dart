@@ -16,20 +16,16 @@ class TaskDetailsPage extends StatelessWidget {
 
   Future<List<Map<String, dynamic>>> fetchTask() async {
     final response = await http.get(
-      Uri.parse("$baseUrl/tasks/$taskId"),
+      Uri.parse("$QYZ_API_BASE/task/$taskId"),
       headers: {
-        "Authorization": "Bearer $bearerToken",
+        "Authorization": "Bearer ${Config.bearerToken}",
         "Content-Type": "application/json",
       },
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> res = jsonDecode(response.body);
-      if (res.isNotEmpty) {
-        return res.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception("Данных по таску нет");
-      }
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return [data]; 
     } else {
       throw Exception("Ошибка загрузки: ${response.body}");
     }

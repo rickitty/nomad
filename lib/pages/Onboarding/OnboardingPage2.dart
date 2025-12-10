@@ -21,6 +21,7 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
 
   Future<void> _requestCameraPermission() async {
     final status = await Permission.camera.request();
+    if (!mounted) return;
     setState(() => _cameraGranted = status.isGranted);
   }
 
