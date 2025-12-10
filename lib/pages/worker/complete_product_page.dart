@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import '../../config.dart'; // тут должен быть baseUrl
+import '../../config.dart';
+import '../../keys.dart'; // тут должен быть baseUrl
 
 class CompleteGoodPage extends StatefulWidget {
   final String taskDetailId;
@@ -114,7 +116,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Камера ещё не готова')));
+      ).showSnackBar( SnackBar(content: Text(cameraIsNotReadyYet.tr())));
       return;
     }
 
@@ -134,7 +136,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Ошибка при съёмке фото')));
+      ).showSnackBar(SnackBar(content: Text(errorWhileFilming.tr())));
     }
   }
 
@@ -160,7 +162,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     if (priceUnitController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Введите цену')));
+      ).showSnackBar( SnackBar(content: Text(enterPrice.tr()
+)));
       return;
     }
 
@@ -174,7 +177,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     if (lat == null || lng == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Геолокация не определена')));
+      ).showSnackBar( SnackBar(content: Text(geo_not_determined.tr())));
       return;
     }
 
@@ -239,13 +242,13 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Товар успешно сохранён')));
+        ).showSnackBar( SnackBar(content: Text(saved.tr())));
         Navigator.of(context).pop(true);
       } else {
         final body = await response.stream.bytesToString();
         debugPrint('update taskDetail error: ${response.statusCode} $body');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка сохранения (${response.statusCode})')),
+          SnackBar(content: Text('${errorWhileSavingTheProduct.tr()} (${response.statusCode})')),
         );
       }
     } catch (e) {
@@ -254,7 +257,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       setState(() => saving = false);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Ошибка сети или сервера')));
+      ).showSnackBar(SnackBar(content: Text(geolocationOrNetworkError.tr())));
     }
   }
 
@@ -263,7 +266,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Выполнить товар"),
+        title:  Text(product_do.tr()),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -312,7 +315,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Маркет: ${widget.marketName}",
+                                    "${Market.tr()}: ${widget.marketName}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -322,7 +325,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    "Продукт: ${widget.productName}",
+                                    "${productsK.tr()}: ${widget.productName}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -351,9 +354,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Параметры фиксации",
-                              style: TextStyle(
+                            Text(
+                              fix_params.tr(),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),
@@ -365,8 +368,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
-                              decoration: const InputDecoration(
-                                labelText: "Цена (PriceUnit)",
+                              decoration: InputDecoration(
+                                labelText: price.tr(),
                                 prefixIcon: Icon(Icons.attach_money),
                                 border: OutlineInputBorder(),
                               ),
@@ -388,11 +391,11 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "Lat: ${lat ?? 'не определено'}",
+                                        "Lat: ${lat ?? noData.tr()}",
                                         style: const TextStyle(fontSize: 13),
                                       ),
                                       Text(
-                                        "Lng: ${lng ?? 'не определено'}",
+                                        "Lng: ${lng ?? noData.tr()}",
                                         style: const TextStyle(fontSize: 13),
                                       ),
                                     ],
@@ -438,8 +441,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Фотофиксация",
+                            Text(
+                               fix.tr(),
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
@@ -447,7 +450,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Сделайте две фотографии: общий вид товара и ценник крупным планом.",
+                              photo_disclaimer.tr(),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[700],
@@ -468,7 +471,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                             ),
                                             child: _buildPhotoPreview(
                                               _photoProduct,
-                                              'Фото товара',
+                                              product_photo.tr(),
                                             ),
                                           ),
                                         ),
@@ -479,8 +482,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                           icon: const Icon(
                                             Icons.camera_alt_rounded,
                                           ),
-                                          label: const Text(
-                                            'Сфотографировать товар',
+                                          label: Text(
+                                            takeAPicture.tr(),
                                           ),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.blue[300],
@@ -508,7 +511,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                             ),
                                             child: _buildPhotoPreview(
                                               _photoPrice,
-                                              'Фото ценника',
+                                              price_tag.tr(),
                                             ),
                                           ),
                                         ),
@@ -519,8 +522,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                           icon: const Icon(
                                             Icons.camera_alt_rounded,
                                           ),
-                                          label: const Text(
-                                            'Сфотографировать ценник',
+                                          label: Text(
+                                            takeAPicture.tr(),
                                           ),
                                           style: ElevatedButton.styleFrom(
                                             foregroundColor: Colors.white,
@@ -563,7 +566,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                 ),
                               )
                             : const Icon(Icons.check_rounded),
-                        label: Text(saving ? "Сохранение..." : "Подтвердить"),
+                        label: Text(saving ? "Сохранение..." : confirm.tr()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade200,
                           foregroundColor: Colors.white,

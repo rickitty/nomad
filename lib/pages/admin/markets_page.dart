@@ -1,7 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:price_book/config.dart';
 import 'dart:convert';
+import '../../keys.dart';
 import 'create_market_page.dart';
 
 class MarketsPage extends StatefulWidget {
@@ -51,7 +53,7 @@ class _MarketsPageState extends State<MarketsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Markets")),
+      appBar: AppBar(title: Text(Markets.tr())),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(

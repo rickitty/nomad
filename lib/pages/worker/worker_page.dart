@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:price_book/drawer.dart';
+import 'package:price_book/keys.dart';
 import '../../config.dart';
 import 'markets_page.dart';
 
@@ -209,7 +211,7 @@ class _WorkerPageState extends State<WorkerPage> {
                       ],
                     ),
                     IconButton(
-                      tooltip: "Обновить",
+                      tooltip: reload.tr(),
                       onPressed: loading ? null : loadAllTasks,
                       icon: AnimatedRotation(
                         turns: loading ? 1 : 0,

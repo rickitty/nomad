@@ -193,7 +193,7 @@ class _TaskListPageState extends State<TaskListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: AppDrawer(),
-      appBar: AppBar(title: Text("Смена статуса задач")),
+      appBar: AppBar(title: Text(ChangeStatus.tr())),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -223,7 +223,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
             Expanded(
               child: tasks.isEmpty && !loading
-                  ? Center(child: Text('Нет задач'))
+                  ? Center(child: Text(tasksNotFound.tr()))
                   : ListView.builder(
                       itemCount: tasks.length,
                       itemBuilder: (context, index) {
@@ -292,20 +292,20 @@ class _TaskListPageState extends State<TaskListPage> {
 
                                 // Даты
                                 Text(
-                                  "Начало: $start",
+                                  "${startedAt.tr()}: $start",
                                   style: const TextStyle(fontSize: 14),
                                 ),
                                 Text(
-                                  "Дедлайн: $end",
+                                  "${deadline.tr()}: $end",
                                   style: const TextStyle(fontSize: 14),
                                 ),
 
                                 const SizedBox(height: 12),
 
                                 // Маркеты
-                                const Text(
-                                  "Маркеты:",
-                                  style: TextStyle(
+                                Text(
+                                  "${Markets.tr()}:",
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
                                   ),
@@ -324,14 +324,14 @@ class _TaskListPageState extends State<TaskListPage> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "Название: ${m["name"]}",
+                                          "${name.tr()}: ${m["name"]}",
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        Text("Адрес: ${m["address"]}"),
-                                        Text("Тип: ${m["type"]}"),
-                                        Text("Часы работы: ${m["workHours"]}"),
+                                        Text("${Address.tr()}: ${m["address"]}"),
+                                        Text("${Type.tr()}: ${m["type"]}"),
+                                        Text("${WorkHours.tr()}: ${m["workHours"]}"),
                                       ],
                                     ),
                                   );
@@ -353,7 +353,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                           ),
                                         );
                                       },
-                                      child: const Text("Детали"),
+                                      child: Text(taskDetails.tr()),
                                     ),
                                     // IconButton(
                                     //   icon: const Icon(Icons.edit),

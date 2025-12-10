@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
+import 'package:price_book/keys.dart';
 import '../../config.dart';
 import 'products_page.dart';
 
@@ -69,7 +70,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Детали таска"),
+        title:  Text(taskDetails.tr()),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -107,8 +108,8 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                           color: Colors.redAccent,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          "Ошибка загрузки",
+                        Text(
+                          errorLoading.tr(),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -118,7 +119,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                         TextButton.icon(
                           onPressed: fetchTaskObjects,
                           icon: const Icon(Icons.refresh_rounded),
-                          label: const Text("Повторить"),
+                          label:  Text(confirm.tr(),)
                         ),
                       ],
                     ),
@@ -135,8 +136,8 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                           color: Colors.grey,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          "Нет данных",
+                        Text(
+                          noData.tr(),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -144,7 +145,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Объекты для этой задачи отсутствуют",
+                          noObjects.tr(),
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
@@ -166,7 +167,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Объекты задачи",
+                                  objectsK.tr(),
                                   style: Theme.of(context).textTheme.titleLarge
                                       ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
@@ -179,7 +180,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                               ],
                             ),
                             IconButton(
-                              tooltip: "Обновить",
+                              tooltip: reload.tr(),
                               onPressed: fetchTaskObjects,
                               icon: const Icon(Icons.refresh_rounded),
                             ),
@@ -203,7 +204,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                             itemBuilder: (context, index) {
                               final task = taskObjects[index];
                               final marketId =
-                                  task["marketId"]?.toString() ?? "Неизвестно";
+                                  task["marketId"]?.toString() ?? "";
                               final completedAt =
                                   task["completedAt"]?.toString() ?? "";
                               final goods = (task["goods"] as List?) ?? [];
@@ -279,7 +280,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                     CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
-                                                    "Маркет: $marketId",
+                                                    "${Market}: $marketId",
                                                     style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -293,7 +294,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                             top: 2,
                                                           ),
                                                       child: Text(
-                                                        "Завершён: $completedAt",
+                                                        "${complete.tr()}: $completedAt",
                                                         style: TextStyle(
                                                           fontSize: 12,
                                                           color:
@@ -348,8 +349,8 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
 
                                         const SizedBox(height: 8),
 
-                                        const Text(
-                                          "Товары:",
+                                         Text(
+                                          productK.tr(),
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -359,7 +360,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                         // Goods list
                                         if (goods.isEmpty)
                                           Text(
-                                            "Нет товаров для этого объекта",
+                                            noData.tr(),
                                             style: TextStyle(
                                               fontSize: 13,
                                               color: Colors.grey[600],
@@ -450,8 +451,8 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                               Icons.arrow_forward_ios,
                                               size: 16,
                                             ),
-                                            label: const Text(
-                                              "Перейти к товарам",
+                                            label: Text(
+                                              ktavaram.tr(),
                                             ),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.blue[300],

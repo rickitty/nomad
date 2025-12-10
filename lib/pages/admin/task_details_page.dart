@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
 import '../../config.dart';
+import '../../keys.dart';
 
 class TaskDetailsPage extends StatelessWidget {
   final String taskId;
@@ -36,7 +37,7 @@ class TaskDetailsPage extends StatelessWidget {
     final locale = context.locale.languageCode;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Детали таска")),
+      appBar: AppBar(title: Text(taskDetails.tr())),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: fetchTask(),
         builder: (context, snapshot) {
@@ -47,13 +48,13 @@ class TaskDetailsPage extends StatelessWidget {
           }
 
           final taskList = snapshot.data!;
-          if (taskList.isEmpty) return const Center(child: Text("Нет данных"));
+          if (taskList.isEmpty) return  Center(child: Text(noData.tr()));
 
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
               Text(
-                "ID таска: ${taskList[0]["id"]}",
+                "${taskID.tr()}: ${taskList[0]["id"]}",
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -79,18 +80,18 @@ class TaskDetailsPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Маркет: $marketId",
+                          "${Market.tr()}: $marketId",
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
                         ),
                         if (completedAt.isNotEmpty)
-                          Text("Завершён: $completedAt"),
+                          Text("${complete.tr()}: $completedAt"),
                         const SizedBox(height: 8),
-                        const Text(
-                          "Товары:",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        Text(
+                          "${productsK.tr()}:",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         ...goods.map((g) {

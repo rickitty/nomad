@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart' as Fill_all_the_fields;
+import 'package:easy_localization/easy_localization.dart' as CreateTask;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:easy_localization/easy_localization.dart';
+import 'package:price_book/keys.dart';
 import '../../config.dart';
 
 class CreateTaskPage extends StatefulWidget {
@@ -43,7 +46,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     if (selectedMarketIds.isEmpty || selectedDate == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Заполните все поля")));
+      ).showSnackBar(SnackBar(content: Text("fill_all_the_fields".tr())));
       return;
     }
 
@@ -70,7 +73,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       if (res.statusCode == 200 || res.statusCode == 201) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Задача создана")));
+        ).showSnackBar(SnackBar(content: Text("task_is_made".tr())));
       } else {
         ScaffoldMessenger.of(
           context,
@@ -86,7 +89,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Создать задачу")),
+      appBar: AppBar(title: Text(createATask.tr())),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -144,8 +147,8 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               },
               child: Text(
                 selectedDate == null
-                    ? "Выберите дедлайн"
-                    : "Дедлайн: ${DateFormat('dd.MM.yyyy').format(selectedDate!)}",
+                    ? chooseDate.tr()
+                    : "${deadline.tr()}: ${DateFormat('dd.MM.yyyy').format(selectedDate!)}",
               ),
             ),
 
@@ -154,7 +157,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             // ---------------- SAVE BUTTON ----------------
             ElevatedButton(
               onPressed: saveTask,
-              child: const Text("Создать задачу"),
+              child:  Text(createATask.tr()),
             ),
           ],
         ),

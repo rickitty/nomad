@@ -205,11 +205,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/sendcode"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"userName": raw}),
-      );
+      final url =
+          "https://qyzylorda-idm-test.curs.kz/api/v1/user/sendcode?PhoneNumber=$raw";
+
+      final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         setState(() => isCodeSent = true);
@@ -228,7 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithCode() async {
     final smsCode = _otpControllers.map((c) => c.text).join();
     final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-
     if (smsCode.length != 4) {
       ScaffoldMessenger.of(
         context,
@@ -245,9 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://smartqyzylorda.curs.kz/api/v1/users/login"),
+        Uri.parse("https://qyzylorda-idm-test.curs.kz/api/v1/user/login/phone"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"username": rawPhone, "code": smsCode}),
+        body: jsonEncode({"login": rawPhone, "password": smsCode}),
       );
 
       if (response.statusCode != 200) {
@@ -260,16 +258,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = jsonDecode(response.body);
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("token", data["token"]);
-      await prefs.setString("refreshToken", data["refreshToken"]);
-      await prefs.setString(
-        "phone",
-        _phoneController.text.replaceAll(RegExp(r'\D'), ''),
-      );
+      await prefs.setString("token", data["token"] ?? "");
+      await prefs.setString("refreshToken", data["refreshToken"] ?? "");
+      await prefs.setString("phone", rawPhone);
 
       if (!mounted) return;
 
-      // Навигация без передачи роли
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),

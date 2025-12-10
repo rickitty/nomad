@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:price_book/config.dart';
+import 'package:price_book/keys.dart';
 
 class CreateMarketPage extends StatefulWidget {
   const CreateMarketPage({super.key});
@@ -68,7 +70,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text("Маркет успешно создан!")));
+        ).showSnackBar(SnackBar(content: Text(succsessfulCreateMarket.tr())));
       } else {
         ScaffoldMessenger.of(
           context,
@@ -93,41 +95,41 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
           children: [
             TextField(
               controller: _name,
-              decoration: const InputDecoration(labelText: "Name"),
+              decoration: InputDecoration(labelText: name.tr()),
             ),
             TextField(
               controller: _address,
-              decoration: const InputDecoration(labelText: "Address"),
+              decoration: InputDecoration(labelText: Address.tr()),
             ),
             TextField(
               controller: _lat,
-              decoration: const InputDecoration(labelText: "Latitude"),
+              decoration:  InputDecoration(labelText: Latitude.tr()),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: _lng,
-              decoration: const InputDecoration(labelText: "Longitude"),
+              decoration:  InputDecoration(labelText: Longitude.tr()),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: _accuracy,
-              decoration: const InputDecoration(labelText: "Geo Accuracy"),
+              decoration:  InputDecoration(labelText: GeoAccuracy.tr()),
               keyboardType: TextInputType.number,
             ),
             TextField(
               controller: _type,
-              decoration: const InputDecoration(labelText: "Type"),
+              decoration:  InputDecoration(labelText: Type.tr()),
             ),
             TextField(
               controller: _workHours,
-              decoration: const InputDecoration(labelText: "Work Hours"),
+              decoration:  InputDecoration(labelText: WorkHours.tr()),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: loading ? null : createMarket,
               child: loading
                   ? const CircularProgressIndicator()
-                  : const Text("Create"),
+                  :  Text(Create.tr()),
             ),
           ],
         ),
