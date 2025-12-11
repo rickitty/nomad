@@ -200,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (raw.length != 11) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Введите корректный номер")));
+      ).showSnackBar(SnackBar(content: Text(enterCorrectNumber.tr())));
       return;
     }
 
@@ -208,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final url =
           "https://qyzylorda-idm-test.curs.kz/api/v1/user/sendcode?PhoneNumber=$raw";
 
-      final response = await http.get(Uri.parse(url));
+      final response = await http.post(Uri.parse(url));
 
       if (response.statusCode == 200) {
         setState(() => isCodeSent = true);
@@ -236,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (rawPhone.length != 11) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Номер телефона должен быть 11 цифр")),
+        SnackBar(content: Text(enterNumDiscription.tr())),
       );
       return;
     }

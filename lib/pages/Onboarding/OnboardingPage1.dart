@@ -39,7 +39,7 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
       body: SafeArea(
         child: Stack(
           children: [
-            // ВЕРХНЯЯ КАРТИНКА — занимает адаптивную высоту
+            // ВЕРХНЯЯ КАРТИНКА
             Animate(
               effects: [
                 FadeEffect(duration: 450.ms, curve: Curves.easeOut),
@@ -64,7 +64,6 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
               ),
             ),
 
-            // НИЖНИЙ БЛОК
             Align(
               alignment: Alignment.bottomCenter,
               child: Animate(
@@ -79,16 +78,14 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                 ],
                 child: Container(
                   width: double.infinity,
-                  // АДАПТИВНАЯ ВЫСОТА: минимум 40% экрана, но не больше 55%
                   constraints: BoxConstraints(
                     minHeight: screenHeight * 0.40,
-                    maxHeight: screenHeight * 0.55,
                   ),
                   padding: EdgeInsets.fromLTRB(
                     28,
                     32,
                     28,
-                    32 + 24, // +24 снизу под точки-индикатор
+                    32 + 24, 
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -97,7 +94,7 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: Colors.black.withOpacity(0.06),
                         blurRadius: 12,
                         offset: const Offset(0, -4),
                       ),
@@ -107,7 +104,7 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Теглайн
+      
                       Text(
                         onboardingTagline.tr(),
                         style: OnboardingTheme.tag,
@@ -118,7 +115,7 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
 
                       const SizedBox(height: 8),
 
-                      // Заголовок
+                 
                       Text(
                         onboardingTitle1.tr(),
                         style: OnboardingTheme.title,
@@ -129,7 +126,6 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
 
                       const SizedBox(height: 14),
 
-                      // Описание
                       Text(
                         onboardingDescription1.tr(),
                         style: OnboardingTheme.body,
@@ -140,7 +136,6 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
 
                       const SizedBox(height: 18),
 
-                      // Подпись "Выберите язык"
                       Text(
                         onboardingChooseLanguage.tr(),
                         style: GoogleFonts.poppins(
@@ -160,16 +155,17 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                       // Чипы языков
                       Row(
                         children: [
-                          _LanguageChip(
-                            label: 'Қазақша',
-                            selected: _selectedLang == 'kz',
-                            onTap: () => _changeLang('kz'),
-                          ),
-                          const SizedBox(width: 8),
+                          
                           _LanguageChip(
                             label: 'Русский',
                             selected: _selectedLang == 'ru',
                             onTap: () => _changeLang('ru'),
+                          ),
+                          const SizedBox(width: 8),
+                          _LanguageChip(
+                            label: 'Қазақша',
+                            selected: _selectedLang == 'kz',
+                            onTap: () => _changeLang('kz'),
                           ),
                           const SizedBox(width: 8),
                           _LanguageChip(
@@ -184,9 +180,8 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                           .moveY(begin: 8, end: 0, duration: 250.ms)
                           .scaleXY(begin: 0.96, end: 1.0, duration: 220.ms),
 
-                      const Spacer(),
+                      const SizedBox(height: 24),
 
-                      // КНОПКА "Продолжить"
                       SizedBox(
                         width: double.infinity,
                         height: 52,

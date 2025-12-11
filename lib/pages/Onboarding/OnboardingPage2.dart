@@ -27,13 +27,14 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    final screenHeight = size.height;
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
+            // ВЕРХНЯЯ КАРТИНКА
             Animate(
               effects: [
                 FadeEffect(duration: 450.ms, curve: Curves.easeOut),
@@ -44,120 +45,155 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
                   curve: Curves.easeOut,
                 ),
               ],
-              child: Container(
+              child: SizedBox(
                 width: double.infinity,
                 height: screenHeight * 0.55,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/StartPage.jpg'),
-                    fit: BoxFit.cover,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/StartPage.jpg'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
             ),
 
+            // НИЖНИЙ БЛОК
             Align(
               alignment: Alignment.bottomCenter,
-              child: Container(
-                height: screenHeight * 0.45,
-                width: screenWidth,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 32,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(32),
+              child: Animate(
+                effects: [
+                  FadeEffect(duration: 350.ms, curve: Curves.easeOut),
+                  MoveEffect(
+                    begin: const Offset(0, 80),
+                    end: Offset.zero,
+                    curve: Curves.easeOutCubic,
+                    duration: 400.ms,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 12,
-                      offset: const Offset(0, -4),
+                ],
+                child: Container(
+                  width: double.infinity,
+                  // Только минимальная высота — дальше блок растёт по контенту
+                  constraints: BoxConstraints(
+                    minHeight: screenHeight * 0.40,
+                  ),
+                  padding: EdgeInsets.fromLTRB(
+                    28,
+                    32,
+                    28,
+                    32 + 24, // запас под индикаторы
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.camera_alt_rounded,
-                      color: OnboardingTheme.primaryColor,
-                      size: 28,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      onboardingCameraTitle.tr(),
-                      style: OnboardingTheme.title,
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      onboardingCameraDescription.tr(),
-                      style: OnboardingTheme.body,
-                    ),
-
-                    if (_cameraGranted != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _cameraGranted == true
-                            ? onboardingCameraGranted.tr()
-                            : onboardingCameraDenied.tr(),
-                        style: OnboardingTheme.smallInfo.copyWith(
-                          color: _cameraGranted == true
-                              ? Colors.green
-                              : Colors.redAccent,
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
                       ),
                     ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.camera_alt_rounded,
+                        color: OnboardingTheme.primaryColor,
+                        size: 28,
+                      ),
+                      const SizedBox(height: 10),
 
-                    const Spacer(),
+                      Text(
+                        onboardingCameraTitle.tr(),
+                        style: OnboardingTheme.title,
+                      ),
+                      const SizedBox(height: 14),
 
-                    const SizedBox(height: 16),
+                      Text(
+                        onboardingCameraDescription.tr(),
+                        style: OnboardingTheme.body,
+                      ),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: OnboardingTheme.primaryButton,
-                        onPressed: () async {
-                          await _requestCameraPermission();
+                      if (_cameraGranted != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _cameraGranted == true
+                              ? onboardingCameraGranted.tr()
+                              : onboardingCameraDenied.tr(),
+                          style: OnboardingTheme.smallInfo.copyWith(
+                            color: _cameraGranted == true
+                                ? Colors.green
+                                : Colors.redAccent,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Кнопка "Разрешить доступ к камере"
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          style: OnboardingTheme.primaryButton,
+                          onPressed: () async {
+                            await _requestCameraPermission();
+                            widget.controller.nextPage(
+                              duration: const Duration(milliseconds: 400),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: Text(
+                            onboardingCameraButton.tr(),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              textStyle: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        )
+                            .animate()
+                            .fadeIn(
+                              duration: 500.ms,
+                              curve: Curves.easeOut,
+                            )
+                            .moveY(
+                              begin: 30,
+                              end: 0,
+                              curve: Curves.easeOut,
+                            )
+                            .scaleXY(
+                              begin: 0.9,
+                              end: 1.0,
+                              duration: 400.ms,
+                            ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Кнопка "Пропустить"
+                      TextButton(
+                        onPressed: () {
                           widget.controller.nextPage(
                             duration: const Duration(milliseconds: 400),
                             curve: Curves.easeInOut,
                           );
                         },
                         child: Text(
-                          onboardingCameraButton.tr(),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                          onboardingSkip.tr(),
+                          style: OnboardingTheme.smallInfo,
                         ),
-                      )
-                          .animate()
-                          .fadeIn(duration: 500.ms, curve: Curves.easeOut)
-                          .moveY(begin: 30, end: 0, curve: Curves.easeOut)
-                          .scaleXY(begin: 0.9, end: 1.0, duration: 400.ms),
-                    ),
-
-                    TextButton(
-                      onPressed: () {
-                        widget.controller.nextPage(
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.easeInOut,
-                        );
-                      },
-                      child: Text(
-                        onboardingSkip.tr(),
-                        style: OnboardingTheme.smallInfo,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

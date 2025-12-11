@@ -47,7 +47,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
           error = false;
         });
       } else {
-        throw Exception("Ошибка загрузки: ${response.body}");
+        throw Exception("${errorLoading.tr()}: ${response.body}");
       }
     } catch (e) {
       setState(() {
@@ -173,7 +173,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Всего объектов: ${taskObjects.length}",
+                                  "${allobj.tr()}: ${taskObjects.length}",
                                   style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(color: Colors.grey[600]),
                                 ),
@@ -309,7 +309,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                             top: 4,
                                                           ),
                                                       child: Text(
-                                                        "Товаров: $totalGoods, выполнено: $completedCount",
+                                                        "${productsK.tr()}: $totalGoods, ${completeV.tr()}: $completedCount",
                                                         style: TextStyle(
                                                           fontSize: 12,
                                                           color:
@@ -406,7 +406,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                   Expanded(
                                                     child: Text(
                                                       name.isEmpty
-                                                          ? "- Без названия"
+                                                          ? "- ${noNameM.tr()}"
                                                           : "- $name",
                                                       overflow:
                                                           TextOverflow.ellipsis,

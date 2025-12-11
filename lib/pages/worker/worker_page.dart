@@ -107,7 +107,7 @@ class _WorkerPageState extends State<WorkerPage> {
       if (response.statusCode == 200) {
         return true; // Успешно
       } else {
-        String message = "Ошибка обновления статуса";
+        String message = statusEr.tr();
         try {
           final jsonBody = jsonDecode(response.body);
           if (jsonBody["error"] != null &&
@@ -125,7 +125,7 @@ class _WorkerPageState extends State<WorkerPage> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
+      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
       return false;
     }
   }
@@ -164,7 +164,7 @@ class _WorkerPageState extends State<WorkerPage> {
     return Scaffold(
       drawer: AppDrawer(),
       appBar: AppBar(
-        title: const Text("Задачи"),
+        title: Text(tasksK.tr()),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -198,13 +198,13 @@ class _WorkerPageState extends State<WorkerPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Мои задачи",
+                          myTasks.tr(),
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Актуальные задания на сегодня",
+                          activeTask.tr(),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: Colors.grey[600]),
                         ),
@@ -241,8 +241,8 @@ class _WorkerPageState extends State<WorkerPage> {
                                   color: Colors.grey,
                                 ),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  "Нет задач",
+                                Text(
+                                  noTasks.tr(),
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -250,7 +250,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Потяните вниз, чтобы обновить список",
+                                  pullToRefresh.tr(),
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey[600],
@@ -349,7 +349,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      "Задача #${t["id"]}",
+                                                      "${taskL.tr()} #${t["id"]}",
                                                       style: const TextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
@@ -358,7 +358,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                     ),
                                                     const SizedBox(height: 2),
                                                     Text(
-                                                      "Объектов: ${markets.length}",
+                                                      "${objectsK.tr()}: ${markets.length}",
                                                       style: TextStyle(
                                                         fontSize: 12,
                                                         color: Colors.grey[700],
@@ -382,7 +382,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                "Начало: $start",
+                                                "${startedAt.tr()}: $start",
                                                 style: const TextStyle(
                                                   fontSize: 13,
                                                 ),
@@ -399,7 +399,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                "Дедлайн: $end",
+                                                "${deadline.tr()}: $end",
                                                 style: const TextStyle(
                                                   fontSize: 13,
                                                 ),
@@ -446,7 +446,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                       ),
                                                       const SizedBox(width: 8),
                                                       Text(
-                                                        "Маркеты (${markets.length})",
+                                                        "${Markets.tr()} (${markets.length})",
                                                         style: const TextStyle(
                                                           fontSize: 14,
                                                           fontWeight:
@@ -481,7 +481,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                                   .start,
                                                           children: [
                                                             Text(
-                                                              "Название: ${m["name"]}",
+                                                              "${name.tr()}: ${m["name"]}",
                                                               style: const TextStyle(
                                                                 fontWeight:
                                                                     FontWeight
@@ -491,17 +491,17 @@ class _WorkerPageState extends State<WorkerPage> {
                                                             if (m["address"] !=
                                                                 null)
                                                               Text(
-                                                                "Адрес: ${m["address"]}",
+                                                                "${Address.tr()}: ${m["address"]}",
                                                               ),
                                                             if (m["type"] !=
                                                                 null)
                                                               Text(
-                                                                "Тип: ${m["type"]}",
+                                                                "${Type.tr()}: ${m["type"]}",
                                                               ),
                                                             if (m["workHours"] !=
                                                                 null)
                                                               Text(
-                                                                "Часы работы: ${m["workHours"]}",
+                                                                "${WorkHours.tr()}: ${m["workHours"]}",
                                                               ),
                                                           ],
                                                         ),
@@ -526,7 +526,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                       .arrow_forward_ios_rounded,
                                                   size: 16,
                                                 ),
-                                                label: const Text("Открыть"),
+                                                label: Text(open.tr()),
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       Colors.blue[300],

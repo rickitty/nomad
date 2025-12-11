@@ -2,6 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:price_book/pages/worker/complete_product_page.dart';
 
+import '../../keys.dart';
+
 class WorkerObjectProductsPage extends StatelessWidget {
   final List<Map<String, dynamic>> taskObjects;
   final String objectId;
@@ -30,7 +32,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
     );
 
     final goods = (object["goods"] as List?) ?? [];
-    final marketName = object["marketId"]?.toString() ?? "Неизвестно";
+    final marketName = object["marketId"]?.toString() ?? "${unknown.tr()}";
     final completedCount =
         goods.where((g) => (g as Map)["completed"] == true).length;
     final totalGoods = goods.length;
@@ -39,7 +41,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Товары"),
+        title: Text("${productsK.tr()}"),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -78,8 +80,8 @@ class WorkerObjectProductsPage extends StatelessWidget {
                         color: Colors.grey,
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        "Нет товаров",
+                       Text(
+                        noProd.tr(),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -87,7 +89,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        "Для этого объекта пока нет списка товаров",
+                        noObjYet.tr(),
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[600],
@@ -130,7 +132,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "Товаров: $totalGoods, выполнено: $completedCount",
+                                  "${productsK.tr()}: $totalGoods, ${completeV.tr()}: $completedCount",
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey[700],
@@ -174,7 +176,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
                               goods[index] as Map<String, dynamic>;
                           final productName =
                               getName(good["name"]).isEmpty
-                                  ? "Без названия"
+                                  ? noNameM.tr()
                                   : getName(good["name"]);
                           final completed =
                               good["completed"] ?? false;
@@ -244,8 +246,8 @@ class WorkerObjectProductsPage extends StatelessWidget {
                                   ),
                                 ),
                                 subtitle: completed
-                                    ? const Text(
-                                        "Выполнено",
+                                    ?  Text(
+                                        completedC.tr(),
                                         style: TextStyle(
                                           color: Colors.green,
                                           fontWeight:
@@ -253,7 +255,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
                                         ),
                                       )
                                     : Text(
-                                        "Ожидает выполнения",
+                                        waiting.tr(),
                                         style: TextStyle(
                                           color: Colors.grey[700],
                                         ),
@@ -301,8 +303,8 @@ class WorkerObjectProductsPage extends StatelessWidget {
                                                     .circular(20),
                                           ),
                                         ),
-                                        child: const Text(
-                                          "Выполнить",
+                                        child: Text(
+                                          execute.tr(),
                                           style: TextStyle(
                                             fontSize: 13,
                                           ),

@@ -31,7 +31,7 @@ class _AdminPageState extends State<AdminPage>
         bottom: TabBar(
           controller: controller,
           tabs: [
-            Tab(text: tasks.tr()),
+            Tab(text: tasksK.tr()),
             Tab(text: createATask.tr()),
           ],
         ),

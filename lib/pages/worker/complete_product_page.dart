@@ -566,7 +566,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                 ),
                               )
                             : const Icon(Icons.check_rounded),
-                        label: Text(saving ? "Сохранение..." : confirm.tr()),
+                        label: Text(saving ? saveWdots.tr() : confirm.tr()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade200,
                           foregroundColor: Colors.white,
