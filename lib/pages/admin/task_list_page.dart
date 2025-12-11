@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -71,69 +72,77 @@ class _TaskListPageState extends State<TaskListPage> {
     }
   }
 
-  Future<Position> _getPosition() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
-    }
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Location permission denied.');
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Location permission permanently denied.');
-    }
-
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.medium,
-      distanceFilter: 0,
-      timeLimit: Duration(seconds: 15),
-    );
-
-    return Geolocator.getCurrentPosition(locationSettings: locationSettings);
+Future<Position?> _getPosition() async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    return null;
   }
+
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      return null;
+    }
+  }
+  if (permission == LocationPermission.deniedForever) {
+    return null;
+  }
+
+  const locationSettings = LocationSettings(
+    accuracy: LocationAccuracy.medium,
+    distanceFilter: 0,
+    timeLimit: Duration(seconds: 15),
+  );
+
+  try {
+    return await Geolocator.getCurrentPosition(
+      locationSettings: locationSettings,
+    );
+  } on TimeoutException {
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
 
   Future<void> updateTaskStatus(String taskId, int newStatus) async {
-    try {
-      final pos = await _getPosition();
+  try {
+    final pos = await _getPosition(); 
 
-      final body = {
-        "status": newStatus,
-        "lat": pos.latitude,
-        "lng": pos.longitude,
-      };
+    final body = <String, dynamic>{
+      "status": newStatus,
+      if (pos != null) "lat": pos.latitude,
+      if (pos != null) "lng": pos.longitude,
+    };
 
-      final response = await http.put(
-        Uri.parse(
-          "$QYZ_API_BASE/task/$taskId",
-        ), // полный URL
-        headers: {
-          "Authorization": "Bearer ${Config.bearerToken}",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode(body),
+    final response = await http.put(
+      Uri.parse("$QYZ_API_BASE/task/$taskId"),
+      headers: {
+        "Authorization": "Bearer ${Config.bearerToken}",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Статус успешно обновлён")),
       );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Статус успешно обновлён")),
-        );
-        loadAllTasks();
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Ошибка: ${response.body}")));
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
+      loadAllTasks();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Ошибка: ${response.body}")),
+      );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Ошибка: $e")),
+    );
   }
+}
+
 
   void _showStatusDialog(String taskId) {
     showDialog(

@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:price_book/keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easy_localization/easy_localization.dart';
+import '../config.dart';
 import './home_page.dart';
 import 'widgets/phone_step.dart';
 import 'widgets/otp_step.dart';
@@ -224,57 +225,81 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _signInWithCode() async {
-    final smsCode = _otpControllers.map((c) => c.text).join();
-    final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    if (smsCode.length != 4) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(enter6DigitCode.tr())));
-      return;
-    }
+Future<void> _signInWithCode() async {
+  final smsCode = _otpControllers.map((c) => c.text).join();
+  final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
 
-    if (rawPhone.length != 11) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(enterNumDiscription.tr())),
-      );
-      return;
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse("https://qyzylorda-idm-test.curs.kz/api/v1/user/login/phone"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"login": rawPhone, "password": smsCode}),
-      );
-
-      if (response.statusCode != 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(response.body)));
-        return;
-      }
-
-      final data = jsonDecode(response.body);
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString("token", data["token"] ?? "");
-      await prefs.setString("refreshToken", data["refreshToken"] ?? "");
-      await prefs.setString("phone", rawPhone);
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-    } catch (e, st) {
-      print("Login exception: $e\n$st");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка при логине: $e")));
-    }
+  if (smsCode.length != 4) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(enter6DigitCode.tr())),
+    );
+    return;
   }
+
+  if (rawPhone.length != 11) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(enterNumDiscription.tr())),
+    );
+    return;
+  }
+
+  try {
+    final uri = Uri.parse(
+      "https://qyzylorda-idm-test.curs.kz/api/v1/user/login/phone",
+    );
+
+    final body = jsonEncode({
+      "login": rawPhone,
+      "code": smsCode,
+    });
+
+    print("LOGIN REQUEST: $body");
+
+    final response = await http.post(
+      uri,
+      headers: {"Content-Type": "application/json"},
+      body: body,
+    );
+
+    print("LOGIN STATUS: ${response.statusCode}");
+    print("LOGIN BODY: ${response.body}");
+
+    if (response.statusCode != 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response.body)),
+      );
+      return;
+    }
+
+    final data = jsonDecode(response.body);
+
+    final token = data["token"] as String? ?? "";
+    final refreshToken = data["refreshToken"] as String? ?? "";
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString("token", token);
+    await prefs.setString("refreshToken", refreshToken);
+    await prefs.setString("phone", rawPhone);
+
+    await prefs.setString("BearerToken", token);
+
+    await Config.loadToken();
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomePage()),
+    );
+  } catch (e, st) {
+    print("Login exception: $e\n$st");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Ошибка при логине: $e")),
+    );
+  }
+}
+
 
   String getGreeting() {
     final hour = DateTime.now().hour;

@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 final QYZ_API_BASE = 'https://qyzylorda-idm-test.curs.kz/api/v1/monitoring';
 
 class Config {
-  static String bearerToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4MzJmN2U3ZC1lYmZmLTRkYTktYjVmNC1lNWNiMjU1NjAyMzAiLCJsb2dpbiI6Ijc3NzUzNTEzMTMyIiwidXNlckdyb3VwIjoiYWRtaW4iLCJuYmYiOjE3NjUzOTQzODQsImV4cCI6MTc2NTM5Nzk4NCwiaWF0IjoxNzY1Mzk0Mzg0LCJpc3MiOiJxeXp5bG9yZGFzYyIsImF1ZCI6IndlYiJ9.hbFy3RGKLeu7a5l1IrnWSn5deVXH8VR3fZnI-W1K7I8";
+  static String bearerToken = "";
 
   static Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
