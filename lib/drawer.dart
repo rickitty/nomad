@@ -10,145 +10,187 @@ import 'package:price_book/pages/my_profile_page.dart';
 import 'package:price_book/pages/worker/worker_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
+
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return FutureBuilder<SharedPreferences>(
       future: SharedPreferences.getInstance(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return Drawer(child: Center(child: CircularProgressIndicator()));
+          return const Drawer(
+            child: Center(
+              child: CircularProgressIndicator(color: kPrimaryColor),
+            ),
+          );
         }
 
         return Drawer(
-          child: ListView(
-            children: [
-              DrawerHeader(
-                child: Text(menu.tr(), style: TextStyle(fontSize: 22)),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white, const Color(0xFFF5F9FF)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              // if (role == 'admin')
-              //   ListTile(
-              //     leading: const Icon(Icons.assignment_add),
-              //     title: Text(assigningObjects.tr()),
-              //     onTap: () {
-              //       Navigator.push(
-              //         context,
-              //         MaterialPageRoute(builder: (_) => AdminAssignPage()),
-              //       );
-              //     },
-              //   ),
-              // if (role == 'admin')
-              ListTile(
-                leading: const Icon(Icons.task),
-                title: Text("Мои задачи"),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => WorkerPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.add_box),
-                title: Text("Create task"),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => CreateTaskPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.store),
-                title: Text("Markets"),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => MarketsPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: Text("Смена статуса задач"),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => TaskListPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.vpn_key),
-                title: Text("Update Token"),
-                onTap: () async {
-                  final TextEditingController tokenController =
-                      TextEditingController();
-
-                  final newToken = await showDialog<String>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text("Enter new token"),
-                      content: TextField(
-                        controller: tokenController,
-                        decoration: const InputDecoration(
-                          hintText: "Bearer token",
-                        ),
+            ),
+            child: SafeArea(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  DrawerHeader(
+                    margin: EdgeInsets.zero,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [kPrimaryColor, kPrimaryColor.withOpacity(0.9)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text("Cancel"),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(
-                            context,
-                            tokenController.text.trim(),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
                           ),
-                          child: const Text("Save"),
+                          child: Center(
+                            child: Text(
+                              'N',
+                              style: textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: kPrimaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'NOMAD',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          menu.tr(),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                          ),
                         ),
                       ],
                     ),
-                  );
+                  ),
 
-                  if (newToken != null && newToken.isNotEmpty) {
-                    await Config.updateToken(newToken);
+                  const SizedBox(height: 4),
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Token updated!")),
-                    );
-                  }
-                },
+                  _DrawerItem(
+                    icon: Icons.task,
+                    title: "Мои задачи",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const WorkerPage()),
+                      );
+                    },
+                  ),
+
+                  _DrawerItem(
+                    icon: Icons.add_box,
+                    title: "Create task",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CreateTaskPage(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  _DrawerItem(
+                    icon: Icons.store,
+                    title: "Markets",
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MarketsPage()),
+                      );
+                    },
+                  ),
+
+                  _DrawerItem(
+                    icon: Icons.edit,
+                    title: statusSidebar.tr(),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const TaskListPage()),
+                      );
+                    },
+                  ),
+
+                  const Divider(height: 24, indent: 16, endIndent: 16),
+
+                  // _DrawerItem(
+                  //   icon: Icons.person,
+                  //   title: myProfile.tr(),
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (_) => const MyProfilePage(),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
+                  _DrawerItem(
+                    icon: Icons.language,
+                    title: changeLanguage.tr(),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showLanguageDialog(context);
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  _DrawerItem(
+                    icon: Icons.logout,
+                    title: logout.tr(),
+                    isDestructive: true,
+                    onTap: () => _logout(context),
+                  ),
+
+                  const SizedBox(height: 12),
+                ],
               ),
-              ListTile(
-                leading: Icon(Icons.person),
-                title: Text(myProfile.tr()),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MyProfilePage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.language),
-                title: Text(changeLanguage.tr()),
-                onTap: () => _showLanguageDialog(context),
-              ),
-              // if (role == 'worker')
-              //   ListTile(
-              //     leading: const Icon(Icons.admin_panel_settings),
-              //     title: Text(becomeAnAdmin.tr()),
-              //     onTap: () => _becomeAdmin(context),
-              //   ),
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: Text(logout.tr()),
-                onTap: () => _logout(context),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -159,28 +201,25 @@ class AppDrawer extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(selectLanguage.tr()),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          selectLanguage.tr(),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ListTile(
-            //   title: Text("Қазақша"),
-            //   onTap: () {
-            //     context.setLocale(Locale('kz'));
-            //     Navigator.pop(context);
-            //   },
-            // ),
             ListTile(
-              title: Text("English"),
+              title: const Text("English"),
               onTap: () {
-                context.setLocale(Locale('en'));
+                context.setLocale(const Locale('en'));
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: Text("Русский"),
+              title: const Text("Русский"),
               onTap: () {
-                context.setLocale(Locale('ru'));
+                context.setLocale(const Locale('ru'));
                 Navigator.pop(context);
               },
             ),
@@ -201,86 +240,75 @@ class AppDrawer extends StatelessWidget {
       );
     }
   }
+}
 
-  // Future<void> _becomeAdmin(BuildContext context) async {
-  //   final TextEditingController passwordController = TextEditingController();
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool isDestructive;
 
-  //   final enteredPassword = await showDialog<String>(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text(enterAdminPassword.tr()),
-  //       content: TextField(
-  //         controller: passwordController,
-  //         obscureText: true,
-  //         decoration: InputDecoration(hintText: password.tr()),
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.pop(context),
-  //           child: Text(cancel.tr()),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.pop(context, passwordController.text);
-  //           },
-  //           child: Text(confirm.tr()),
-  //         ),
-  //       ],
-  //     ),
-  //   );
+  const _DrawerItem({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isDestructive = false,
+  });
 
-  //   if (enteredPassword == null) return;
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
 
-  //   final adminDoc = await FirebaseFirestore.instance
-  //       .collection("system")
-  //       .doc("admin")
-  //       .get();
-
-  //   if (!adminDoc.exists) {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(const SnackBar(content: Text("Admin password not found")));
-  //     return;
-  //   }
-
-  //   final firestorePassword = adminDoc.data()?["password"];
-
-  //   if (enteredPassword != firestorePassword) {
-  //     ScaffoldMessenger.of(
-  //       context,
-  //     ).showSnackBar(SnackBar(content: Text(incorrectPassword.tr())));
-  //     return;
-  //   }
-
-  //   final uid = FirebaseAuth.instance.currentUser!.uid;
-
-  //   await FirebaseFirestore.instance.collection("users").doc(uid).update({
-  //     "role": "admin",
-  //   });
-
-  //   final token = await FirebaseAuth.instance.currentUser!.getIdToken();
-
-  //   final response = await http.post(
-  //     Uri.parse("http://localhost:3000/api/user/makeAdmin"),
-  //     headers: {
-  //       "Authorization": "Bearer $token",
-  //       "Content-Type": "application/json",
-  //     },
-  //   );
-
-  //   if (response.statusCode != 200) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text("MongoDB error: ${response.body}")),
-  //     );
-  //     return;
-  //   }
-
-  //   final prefs = await SharedPreferences.getInstance();
-  //   await prefs.setString("role", "admin");
-
-  //   Navigator.pushReplacement(
-  //     context,
-  //     MaterialPageRoute(builder: (_) => const AdminPage()),
-  //   );
-  // }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: Colors.white,
+        elevation: 0.5,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isDestructive
+                        ? Colors.red.withOpacity(0.08)
+                        : kPrimaryColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 22,
+                    color: isDestructive ? Colors.red : kPrimaryColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: isDestructive
+                          ? Colors.red
+                          : const Color(0xFF1F2933),
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: Colors.grey.shade400,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

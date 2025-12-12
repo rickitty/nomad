@@ -20,36 +20,42 @@ class _WorkerPageState extends State<WorkerPage> {
   String phone = "";
 
   Future<void> loadAllTasks() async {
-    setState(() => loading = true);
+  setState(() => loading = true);
 
-    try {
-      final res = await http.get(
-        Uri.parse(
-          "$QYZ_API_BASE/task",
-        ), // прямой адрес API
-        headers: {
-          "Authorization": "Bearer ${Config.bearerToken}",
-          "Content-Type": "application/json",
-        },
+  try {
+    final headers = await Config.authorizedJsonHeaders();
+
+    if (!headers.containsKey('Authorization')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Токен не найден. Авторизуйтесь заново.')),
       );
+      return;
+    }
 
-      if (res.statusCode == 200) {
-        setState(() {
-          tasks = jsonDecode(res.body);
-        });
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: ${res.body}')));
-      }
-    } catch (e) {
+    final res = await http.get(
+      Uri.parse("$QYZ_API_BASE/task"),
+      headers: headers,
+    );
+
+    if (res.statusCode == 200) {
+      setState(() {
+        tasks = jsonDecode(res.body);
+      });
+    } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
-    } finally {
-      setState(() => loading = false);
+      ).showSnackBar(
+        SnackBar(content: Text('Ошибка загрузки: ${res.body}')),
+      );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+  } finally {
+    setState(() => loading = false);
   }
+}
 
   Future<Position> _getPosition() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -83,52 +89,77 @@ class _WorkerPageState extends State<WorkerPage> {
   }
 
   Future<bool> autoChangeStatus(String taskId, int currentStatus) async {
-    if (currentStatus != 1) return true;
-    final pos = await _getPosition();
+  // Для всех, кроме "Назначены", просто открываем
+  if (currentStatus != 1) return true;
 
-    final body = {
-      "status": 2, // InProgress
-      "lat": pos.latitude,
-      "lng": pos.longitude,
-    };
+  // 1. Сначала пытаемся получить геопозицию
+  Position pos;
+  try {
+    pos = await _getPosition();
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Не удалось получить геопозицию: $e')),
+    );
+    return false;
+  }
 
-    try {
-      final response = await http.put(
-        Uri.parse(
-          "$QYZ_API_BASE/task/$taskId",
-        ), // полный адрес API
-        headers: {
-          "Authorization": "Bearer ${Config.bearerToken}",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode(body),
+  // 2. Формируем тело запроса
+  final body = {
+    "status": 2,       // InProgress (число, как в Swagger)
+    "lat": pos.latitude,
+    "lng": pos.longitude,
+  };
+
+  try {
+    final headers = await Config.authorizedJsonHeaders();
+
+    if (!headers.containsKey('Authorization')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Токен не найден. Авторизуйтесь заново.')),
       );
-
-      if (response.statusCode == 200) {
-        return true; // Успешно
-      } else {
-        String message = statusEr.tr();
-        try {
-          final jsonBody = jsonDecode(response.body);
-          if (jsonBody["error"] != null &&
-              jsonBody["error"]["message"] != null) {
-            message = jsonBody["error"]["message"];
-          }
-        } catch (_) {}
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
-
-        return false;
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
       return false;
     }
+
+    final uri = Uri.parse("$QYZ_API_BASE/task/$taskId");
+
+    // ЛОГИ для дебага
+    debugPrint("PUT $uri");
+    debugPrint("HEADERS: $headers");
+    debugPrint("BODY   : ${jsonEncode(body)}");
+
+    final response = await http.put(
+      uri,
+      headers: headers,
+      body: jsonEncode(body),
+    );
+
+    debugPrint("STATUS : ${response.statusCode}");
+    debugPrint("RESP   : ${response.body}");
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      String message = statusEr.tr();
+      try {
+        final jsonBody = jsonDecode(response.body);
+        if (jsonBody["error"] != null &&
+            jsonBody["error"]["message"] != null) {
+          message = jsonBody["error"]["message"];
+        }
+      } catch (_) {}
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+      return false;
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${error.tr()}: $e")),
+    );
+    return false;
   }
+}
+
 
   @override
   void initState() {
@@ -170,7 +201,7 @@ class _WorkerPageState extends State<WorkerPage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blue.shade200, Colors.blue.shade200],
+              colors: [Colors.blue.shade200, const Color.fromRGBO(144, 202, 249, 1)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

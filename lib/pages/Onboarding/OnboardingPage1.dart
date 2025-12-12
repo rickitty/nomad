@@ -163,12 +163,6 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                           ),
                           const SizedBox(width: 8),
                           _LanguageChip(
-                            label: 'Қазақша',
-                            selected: _selectedLang == 'kz',
-                            onTap: () => _changeLang('kz'),
-                          ),
-                          const SizedBox(width: 8),
-                          _LanguageChip(
                             label: 'English',
                             selected: _selectedLang == 'en',
                             onTap: () => _changeLang('en'),

@@ -26,37 +26,44 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
   }
 
   Future<void> fetchTaskObjects() async {
-    setState(() => loading = true);
+  setState(() => loading = true);
 
-    try {
-      final response = await http.get(
-        Uri.parse(
-          "$QYZ_API_BASE/task/${widget.taskId}",
-        ),
-        headers: {
-          "Authorization": "Bearer ${Config.bearerToken}",
-          "Content-Type": "application/json",
-        },
-      );
+  try {
+    final headers = await Config.authorizedJsonHeaders();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> res = jsonDecode(response.body);
-        setState(() {
-          taskObjects = res.isNotEmpty ? res.cast<Map<String, dynamic>>() : [];
-          loading = false;
-          error = false;
-        });
-      } else {
-        throw Exception("${errorLoading.tr()}: ${response.body}");
-      }
-    } catch (e) {
+    if (!headers.containsKey('Authorization')) {
       setState(() {
         loading = false;
         error = true;
       });
-      debugPrint("fetchTaskObjects exception: $e");
+      debugPrint("fetchTaskObjects: token not found");
+      return;
     }
+
+    final response = await http.get(
+      Uri.parse("$QYZ_API_BASE/task/${widget.taskId}"),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> res = jsonDecode(response.body);
+      setState(() {
+        taskObjects = res.isNotEmpty ? res.cast<Map<String, dynamic>>() : [];
+        loading = false;
+        error = false;
+      });
+    } else {
+      throw Exception("${errorLoading.tr()}: ${response.body}");
+    }
+  } catch (e) {
+    setState(() {
+      loading = false;
+      error = true;
+    });
+    debugPrint("fetchTaskObjects exception: $e");
   }
+}
+
 
   @override
   void initState() {

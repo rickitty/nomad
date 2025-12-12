@@ -111,6 +111,7 @@
     "Saved": "Сохранено",
     "Error_while_saving_the_product": "Ошибка при сохранении продукта",
     "No_photo_yet": "Фото пока нет",
+    "No_obj_yet":"Пока нет объектов",
     "Filled": "Заполнено",
     "Current_price": "Текущая цена",
     "Take_a_picture": "Сделать фото",
@@ -137,6 +138,7 @@
     "Location_permission_denied_forever": "Сервис локации отключен",
     "Please_grant_location_permission": "Дайте разрешение сервсисам локации",
     "Open_app_settings": "Открыть настройки приложения",
+    "addTask":"Нажмите на кнопку «Создать», чтобы добавить первый объект.",
     "Open_location_settings": "Открыть настройки локации",
     "completedF": "Завершено принудительно",
     "enterCorrectNumber":"Введите корректный номер",
@@ -148,7 +150,9 @@
     "Longitude":"Долгота",
     "Geo_accuracy":"Точность Гео",
     "Type":"Тип",
+    "changeStatusSidebar":"Смена статуса задач",
     "Work_hours":"Часы работы",
+    "no_abli_obj":"Нет доступных объектов",
     "Create":"Создать",
     "Markets":"Маркеты",
 
@@ -171,5 +175,6 @@
     "onboardingContinueWithoutLocation": "Продолжить без геолокации",
     "nonameM":"Без названия",
     "unknown":"неизвестно",
-    "NoProducts":"Нет продуктов"
+    "NoProducts":"Нет продуктов",
+    "loading_markets_error":"Ошибка при загрузке рынков"
 }

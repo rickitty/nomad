@@ -225,21 +225,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-Future<void> _signInWithCode() async {
+  Future<void> _signInWithCode() async {
   final smsCode = _otpControllers.map((c) => c.text).join();
   final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
 
   if (smsCode.length != 4) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(enter6DigitCode.tr())),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(enter6DigitCode.tr())));
     return;
   }
 
   if (rawPhone.length != 11) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(enterNumDiscription.tr())),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(enterNumDiscription.tr())));
     return;
   }
 
@@ -248,10 +246,7 @@ Future<void> _signInWithCode() async {
       "https://qyzylorda-idm-test.curs.kz/api/v1/user/login/phone",
     );
 
-    final body = jsonEncode({
-      "login": rawPhone,
-      "code": smsCode,
-    });
+    final body = jsonEncode({"login": rawPhone, "code": smsCode});
 
     print("LOGIN REQUEST: $body");
 
@@ -262,29 +257,37 @@ Future<void> _signInWithCode() async {
     );
 
     print("LOGIN STATUS: ${response.statusCode}");
-    print("LOGIN BODY: ${response.body}");
+    print("LOGIN BODY RAW: ${response.body}");
 
     if (response.statusCode != 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.body)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(response.body)));
       return;
     }
 
     final data = jsonDecode(response.body);
+    print("LOGIN JSON PARSED: $data");
 
-    final token = data["token"] as String? ?? "";
+    final accessToken = data["accessToken"] as String? ?? "";
     final refreshToken = data["refreshToken"] as String? ?? "";
 
-    final prefs = await SharedPreferences.getInstance();
+    print("PARSED accessToken: $accessToken");
+    print("PARSED refreshToken: $refreshToken");
 
-    await prefs.setString("token", token);
-    await prefs.setString("refreshToken", refreshToken);
-    await prefs.setString("phone", rawPhone);
+    if (accessToken.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Сервер не вернул accessToken. Проверьте ответ /login."),
+        ),
+      );
+      return;
+    }
 
-    await prefs.setString("BearerToken", token);
-
-    await Config.loadToken();
+    await Config.saveAuthData(
+      token: accessToken,         
+      refreshToken: refreshToken,
+      phone: rawPhone,
+    );
 
     if (!mounted) return;
 
@@ -299,7 +302,6 @@ Future<void> _signInWithCode() async {
     );
   }
 }
-
 
   String getGreeting() {
     final hour = DateTime.now().hour;

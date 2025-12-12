@@ -1,13 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+
 import 'package:price_book/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/admin/task_details_page.dart';
 import '../../config.dart';
+
+const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
 class TaskListPage extends StatefulWidget {
   const TaskListPage({super.key});
@@ -32,117 +36,130 @@ class _TaskListPageState extends State<TaskListPage> {
     6: "Stopped",
   };
 
-  String getLocalized(dynamic data, String locale) {
-    if (data == null || data is! Map) return "";
-    return data[locale] ?? data["en"] ?? data.values.first.toString();
+  Color _statusColor(String status) {
+    switch (status) {
+      case "Completed":
+        return Colors.green;
+      case "Canceled":
+      case "Stopped":
+        return Colors.red;
+      case "InProgress":
+      case "AwaitingReview":
+        return Colors.orange;
+      case "Assigned":
+        return kPrimaryColor;
+      default:
+        return Colors.grey;
+    }
   }
 
   Future<void> loadAllTasks() async {
     setState(() => loading = true);
 
     try {
+      final headers = await Config.authorizedJsonHeaders();
+
+      if (!headers.containsKey('Authorization')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('token_not_found'.tr())),
+        );
+        return;
+      }
+
       final res = await http.get(
-        Uri.parse("$QYZ_API_BASE/task"), // полный URL
-        headers: {
-          "Authorization": "Bearer ${Config.bearerToken}",
-          "Content-Type": "application/json",
-        },
+        Uri.parse("$QYZ_API_BASE/task"),
+        headers: headers,
       );
-      print("=== RESPONSE START ===");
-      print("STATUS: ${res.statusCode}");
-      print("HEADERS: ${res.headers}");
-      print("BODY: ${res.body}");
-      print("=== RESPONSE END ===");
 
       if (res.statusCode == 200) {
         setState(() {
-          tasks = jsonDecode(res.body);
+          tasks = jsonDecode(utf8.decode(res.bodyBytes));
         });
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: ${res.body}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${'error_loading'.tr()}: ${res.body}')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${'error'.tr()}: $e')),
+      );
     } finally {
       setState(() => loading = false);
     }
   }
 
+  Future<Position?> _getPosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
 
-Future<Position?> _getPosition() async {
-  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    return null;
-  }
-
-  LocationPermission permission = await Geolocator.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return null;
+      }
+    }
+    if (permission == LocationPermission.deniedForever) return null;
+
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.medium,
+      distanceFilter: 0,
+      timeLimit: Duration(seconds: 15),
+    );
+
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: locationSettings,
+      );
+    } on TimeoutException {
+      return null;
+    } catch (_) {
       return null;
     }
   }
-  if (permission == LocationPermission.deniedForever) {
-    return null;
-  }
-
-  const locationSettings = LocationSettings(
-    accuracy: LocationAccuracy.medium,
-    distanceFilter: 0,
-    timeLimit: Duration(seconds: 15),
-  );
-
-  try {
-    return await Geolocator.getCurrentPosition(
-      locationSettings: locationSettings,
-    );
-  } on TimeoutException {
-    return null;
-  } catch (_) {
-    return null;
-  }
-}
 
   Future<void> updateTaskStatus(String taskId, int newStatus) async {
-  try {
-    final pos = await _getPosition(); 
+    try {
+      final pos = await _getPosition();
 
-    final body = <String, dynamic>{
-      "status": newStatus,
-      if (pos != null) "lat": pos.latitude,
-      if (pos != null) "lng": pos.longitude,
-    };
+      final body = <String, dynamic>{
+        "status": newStatus,
+        if (pos != null) "lat": pos.latitude,
+        if (pos != null) "lng": pos.longitude,
+      };
 
-    final response = await http.put(
-      Uri.parse("$QYZ_API_BASE/task/$taskId"),
-      headers: {
-        "Authorization": "Bearer ${Config.bearerToken}",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode(body),
-    );
+      final headers = await Config.authorizedJsonHeaders();
 
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Статус успешно обновлён")),
+      if (!headers.containsKey('Authorization')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('token_not_found'.tr())),
+        );
+        return;
+      }
+
+      final response = await http.put(
+        Uri.parse("$QYZ_API_BASE/task/$taskId"),
+        headers: headers,
+        body: jsonEncode(body),
       );
-      loadAllTasks();
-    } else {
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('status_updated'.tr())),
+        );
+        loadAllTasks();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${'error'.tr()}: ${response.body}")),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Ошибка: ${response.body}")),
+        SnackBar(content: Text("${'error'.tr()}: $e")),
       );
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Ошибка: $e")),
-    );
   }
-}
-
 
   void _showStatusDialog(String taskId) {
     showDialog(
@@ -151,22 +168,34 @@ Future<Position?> _getPosition() async {
         int selected = 0;
 
         return AlertDialog(
-          title: const Text("Изменить статус"),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'change_status'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           content: StatefulBuilder(
             builder: (context, setStateDialog) {
-              return DropdownButton<int>(
+              return DropdownButtonFormField<int>(
                 value: selected,
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text("0 - None")),
-                  DropdownMenuItem(value: 1, child: Text("1 - Assigned")),
-                  DropdownMenuItem(value: 2, child: Text("2 - InProgress")),
-                  DropdownMenuItem(value: 3, child: Text("3 - AwaitingReview")),
-                  DropdownMenuItem(value: 4, child: Text("4 - Completed")),
-                  DropdownMenuItem(value: 5, child: Text("5 - Canceled")),
-                  DropdownMenuItem(value: 6, child: Text("6 - Stopped")),
-                ],
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+                items: taskStatuses.entries
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e.key,
+                        child: Text("${e.key} - ${e.value}"),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
-                  setStateDialog(() => selected = value!);
+                  if (value == null) return;
+                  setStateDialog(() => selected = value);
                 },
               );
             },
@@ -174,14 +203,20 @@ Future<Position?> _getPosition() async {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Отмена"),
+              child: Text(cancel.tr()),
             ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
                 updateTaskStatus(taskId, selected);
               },
-              child: const Text("Сохранить"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(save.tr()),
             ),
           ],
         );
@@ -189,169 +224,245 @@ Future<Position?> _getPosition() async {
     );
   }
 
+  InputDecoration _searchDecoration() {
+    return InputDecoration(
+      labelText: searchByPhone.tr(),
+      prefixIcon: const Icon(Icons.search),
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Config.loadToken(); // <- загружаем токен
-      await loadAllTasks(); // <- теперь токен уже есть
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadAllTasks();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: AppDrawer(),
-      appBar: AppBar(title: Text(ChangeStatus.tr())),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: searchByPhone.tr(),
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (v) => phone = v,
-            ),
-            const SizedBox(height: 10),
+    final textTheme = Theme.of(context).textTheme;
 
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: loadAllTasks,
-                    child: Text(allTasks.tr()),
+    return Scaffold(
+      drawer: const AppDrawer(),
+      backgroundColor: const Color(0xFFF5F9FF),
+      appBar: AppBar(
+        title: Text(
+          ChangeStatus.tr(),
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: kPrimaryColor,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              TextField(
+                decoration: _searchDecoration(),
+                onChanged: (v) => phone = v,
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: ElevatedButton.icon(
+                  onPressed: loadAllTasks,
+                  icon: const Icon(Icons.list),
+                  label: Text(allTasks.tr()),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 1.5,
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-            if (loading) const CircularProgressIndicator(),
-
-            Expanded(
-              child: tasks.isEmpty && !loading
-                  ? Center(child: Text(tasksNotFound.tr()))
-                  : ListView.builder(
-                      itemCount: tasks.length,
-                      itemBuilder: (context, index) {
-                        final t = tasks[index];
-
-                        final status = t["status"] ?? "Unknown";
-                        final markets = t["markets"] ?? [];
-                        final start =
-                            t["startTime"]?.toString().split("T").first ?? "";
-                        final end =
-                            t["deadLine"]?.toString().split("T").first ?? "";
-
-                        return Card(
-                          elevation: 3,
-                          margin: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+              ),
+              const SizedBox(height: 16),
+              if (loading)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation(kPrimaryColor),
+                  ),
+                ),
+              Expanded(
+                child: tasks.isEmpty && !loading
+                    ? Center(
+                        child: Text(
+                          tasksNotFound.tr(),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // ID + статус
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "ID: ${t["id"]}",
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => _showStatusDialog(t["id"]),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: status == "Completed"
-                                              ? Colors.green
-                                              : status == "Stopped"
-                                              ? Colors.red
-                                              : Colors.orange,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: tasks.length,
+                        itemBuilder: (context, index) {
+                          final t = tasks[index];
+                          final status = (t["status"] ?? "").toString();
+                          final markets = t["markets"] ?? [];
+                          final start =
+                              t["startTime"]?.toString().split("T").first ?? "";
+                          final end =
+                              t["deadLine"]?.toString().split("T").first ?? "";
+
+                          final statusColor = _statusColor(status);
+
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // верхняя строка: ID + статус
+                                  Row(
+                                    children: [
+                                      Expanded(
                                         child: Text(
-                                          status,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                          "${taskID.tr()}: ${t["id"]}",
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Даты
-                                Text(
-                                  "${startedAt.tr()}: $start",
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                Text(
-                                  "${deadline.tr()}: $end",
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-
-                                const SizedBox(height: 12),
-
-                                // Маркеты
-                                Text(
-                                  "${Markets.tr()}:",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-
-                                ...markets.map<Widget>((m) {
-                                  return Container(
-                                    margin: const EdgeInsets.only(top: 8),
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.shade50,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          "${name.tr()}: ${m["name"]}",
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
+                                      GestureDetector(
+                                        onTap: () =>
+                                            _showStatusDialog(t["id"]),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusColor.withOpacity(0.15),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.circle,
+                                                size: 10,
+                                                color: statusColor,
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                status,
+                                                style: textTheme.bodySmall
+                                                    ?.copyWith(
+                                                  color: statusColor,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        Text("${Address.tr()}: ${m["address"]}"),
-                                        Text("${Type.tr()}: ${m["type"]}"),
-                                        Text("${WorkHours.tr()}: ${m["workHours"]}"),
-                                      ],
+                                      ),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 10),
+
+                                  Text(
+                                    "${startedAt.tr()}: $start",
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[700],
                                     ),
-                                  );
-                                }),
+                                  ),
+                                  Text(
+                                    "${deadline.tr()}: $end",
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
 
-                                const SizedBox(height: 12),
+                                  const SizedBox(height: 12),
 
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    ElevatedButton(
+                                  Text(
+                                    "${Markets.tr()}:",
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+
+                                  ...markets.map<Widget>((m) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(top: 6),
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: kPrimaryColor.withOpacity(0.06),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "${name.tr()}: ${m["name"]}",
+                                            style: textTheme.bodyMedium
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          if ((m["address"] ?? "").toString().isNotEmpty)
+                                            Text(
+                                              "${Address.tr()}: ${m["address"]}",
+                                              style:
+                                                  textTheme.bodySmall?.copyWith(
+                                                color: Colors.grey[700],
+                                              ),
+                                            ),
+                                          Text(
+                                            "${Type.tr()}: ${m["type"]}",
+                                            style:
+                                                textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                          Text(
+                                            "${WorkHours.tr()}: ${m["workHours"]}",
+                                            style:
+                                                textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+
+                                  const SizedBox(height: 12),
+
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton.icon(
                                       onPressed: () {
                                         Navigator.push(
                                           context,
@@ -362,29 +473,22 @@ Future<Position?> _getPosition() async {
                                           ),
                                         );
                                       },
-                                      child: Text(taskDetails.tr()),
+                                      icon: const Icon(Icons.arrow_forward),
+                                      label: Text(taskDetails.tr()),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: kPrimaryColor,
+                                      ),
                                     ),
-                                    // IconButton(
-                                    //   icon: const Icon(Icons.edit),
-                                    //   onPressed: () async {
-                                    //     await Navigator.push(
-                                    //       context,
-                                    //       MaterialPageRoute(
-                                    //         builder: (_) => EditTaskPage(task: t),
-                                    //       ),
-                                    //     );
-                                    //   },
-                                    // ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -158,108 +158,128 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   }
 
   // ---------- SAVE (PUT) ----------
-  Future<void> _sendData() async {
-    if (priceUnitController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar( SnackBar(content: Text(enterPrice.tr()
-)));
-      return;
-    }
+ Future<void> _sendData() async {
+  if (priceUnitController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(enterPrice.tr())),
+    );
+    return;
+  }
 
-    if (_photoProduct == null || _photoPrice == null) {
+  if (_photoProduct == null || _photoPrice == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Нужно сделать 2 фото: товар и ценник')),
+    );
+    return;
+  }
+
+  if (lat == null || lng == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(geo_not_determined.tr())),
+    );
+    return;
+  }
+
+  setState(() => saving = true);
+
+  try {
+    // Берём токен, который сохранили при логине
+    final token = await Config.getToken();
+    if (token == null || token.isEmpty) {
+      setState(() => saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Нужно сделать 2 фото: товар и ценник')),
+        const SnackBar(content: Text('Токен не найден. Авторизуйтесь заново.')),
       );
       return;
     }
 
-    if (lat == null || lng == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar( SnackBar(content: Text(geo_not_determined.tr())));
-      return;
+    final uri = Uri.parse("$QYZ_API_BASE/taskDetail/update");
+    final request = http.MultipartRequest('PUT', uri);
+
+    request.headers['Authorization'] = 'Bearer $token';
+ 
+    request.fields['TaskDetailId'] = widget.taskDetailId;
+    request.fields['GoodId'] = widget.goodId;
+    request.fields['PriceUnit'] =
+        priceUnitController.text.trim().replaceAll(',', '.');
+    request.fields['Lng'] = lng!.toString();
+    request.fields['Lat'] = lat!.toString();
+
+
+    // 🔹 файлы
+    if (kIsWeb) {
+      final productBytes = await _photoProduct!.readAsBytes();
+      final priceBytes = await _photoPrice!.readAsBytes();
+
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'PhotoProduct',
+          productBytes,
+          filename: _photoProduct!.name.endsWith('.jpg')
+              ? _photoProduct!.name
+              : '${_photoProduct!.name}.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'PhotoPrice',
+          priceBytes,
+          filename: _photoPrice!.name.endsWith('.jpg')
+              ? _photoPrice!.name
+              : '${_photoPrice!.name}.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+    } else {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'PhotoProduct',
+          _photoProduct!.path,
+        ),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'PhotoPrice',
+          _photoPrice!.path,
+        ),
+      );
     }
 
-    setState(() => saving = true);
+    print(request.fields);
 
-    try {
-      // 🔹 используем прямой адрес API
-      final uri = Uri.parse("$QYZ_API_BASE/taskDetail/update");
-      final request = http.MultipartRequest('PUT', uri);
-      request.headers['Authorization'] = 'Bearer ${Config.bearerToken}';
+    final response = await request.send();
 
-      // 🔹 Поля
-      request.fields['TaskDetailId'] = widget.taskDetailId;
-      request.fields['GoodId'] = widget.goodId;
-      request.fields['PriceUnit'] = priceUnitController.text.trim();
-      request.fields['Lat'] = lat!.toString();
-      request.fields['Lng'] = lng!.toString();
+    if (!mounted) return;
+    setState(() => saving = false);
 
-      // 🔹 Файлы
-      if (kIsWeb) {
-        final productBytes = await _photoProduct!.readAsBytes();
-        final priceBytes = await _photoPrice!.readAsBytes();
-
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'PhotoProduct',
-            productBytes,
-            filename: _photoProduct!.name.endsWith('.jpg')
-                ? _photoProduct!.name
-                : '${_photoProduct!.name}.jpg',
-            contentType: MediaType('image', 'jpeg'),
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(saved.tr())),
+      );
+      Navigator.of(context).pop(true);
+    } else {
+      final body = await response.stream.bytesToString();
+      debugPrint('update taskDetail error: ${response.statusCode} $body');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${errorWhileSavingTheProduct.tr()} (${response.statusCode})',
           ),
-        );
-
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'PhotoPrice',
-            priceBytes,
-            filename: _photoPrice!.name.endsWith('.jpg')
-                ? _photoPrice!.name
-                : '${_photoPrice!.name}.jpg',
-            contentType: MediaType('image', 'jpeg'),
-          ),
-        );
-      } else {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'PhotoProduct',
-            _photoProduct!.path,
-          ),
-        );
-        request.files.add(
-          await http.MultipartFile.fromPath('PhotoPrice', _photoPrice!.path),
-        );
-      }
-
-      final response = await request.send();
-
-      if (!mounted) return;
-      setState(() => saving = false);
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar( SnackBar(content: Text(saved.tr())));
-        Navigator.of(context).pop(true);
-      } else {
-        final body = await response.stream.bytesToString();
-        debugPrint('update taskDetail error: ${response.statusCode} $body');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${errorWhileSavingTheProduct.tr()} (${response.statusCode})')),
-        );
-      }
-    } catch (e) {
-      debugPrint('sendData exception: $e');
-      if (!mounted) return;
-      setState(() => saving = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(geolocationOrNetworkError.tr())));
+        ),
+      );
     }
+  } catch (e) {
+    debugPrint('sendData exception: $e');
+    if (!mounted) return;
+    setState(() => saving = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(geolocationOrNetworkError.tr())),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
