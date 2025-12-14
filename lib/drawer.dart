@@ -106,7 +106,7 @@ class AppDrawer extends StatelessWidget {
 
                   _DrawerItem(
                     icon: Icons.task,
-                    title: "Мои задачи",
+                    title: myTasks.tr(),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -118,7 +118,7 @@ class AppDrawer extends StatelessWidget {
 
                   _DrawerItem(
                     icon: Icons.add_box,
-                    title: "Create task",
+                    title: createATask.tr(),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -132,7 +132,7 @@ class AppDrawer extends StatelessWidget {
 
                   _DrawerItem(
                     icon: Icons.store,
-                    title: "Markets",
+                    title: Markets.tr(),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(

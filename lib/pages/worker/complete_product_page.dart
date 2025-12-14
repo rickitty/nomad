@@ -34,6 +34,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   double? lng;
   bool loadingLocation = true;
   bool saving = false;
+  double? accuracy;
 
   CameraController? _cameraController;
   Future<void>? _initCameraFuture;
@@ -76,6 +77,17 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       );
     }
   }
+  Future<Position> _getFreshPosition() async {
+  final pos = await Geolocator.getCurrentPosition(
+    desiredAccuracy: LocationAccuracy.bestForNavigation,
+  );
+  setState(() {
+    lat = pos.latitude;
+    lng = pos.longitude;
+    accuracy = pos.accuracy;
+  });
+  return pos;
+}
 
   Future<void> _updateLocation() async {
     try {
@@ -159,6 +171,18 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
 
   // ---------- SAVE (PUT) ----------
  Future<void> _sendData() async {
+  final pos = await _getFreshPosition();
+
+
+  if (pos.accuracy > 50) {
+  setState(() => saving = false);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Слабый GPS: точность ~${pos.accuracy.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.')),
+  );
+  return;
+  
+}
+
   if (priceUnitController.text.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(enterPrice.tr())),
@@ -202,14 +226,17 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     request.fields['GoodId'] = widget.goodId;
     request.fields['PriceUnit'] =
         priceUnitController.text.trim().replaceAll(',', '.');
-    request.fields['Lng'] = lng!.toString();
-    request.fields['Lat'] = lat!.toString();
+String toCommaCoord(double v) => v.toStringAsFixed(6).replaceAll('.', ',');
+request.fields['Lng'] = toCommaCoord(lng!);
+request.fields['Lat'] = toCommaCoord(lat!);
+
 
 
     // 🔹 файлы
     if (kIsWeb) {
       final productBytes = await _photoProduct!.readAsBytes();
       final priceBytes = await _photoPrice!.readAsBytes();
+      
 
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -250,6 +277,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     print(request.fields);
 
     final response = await request.send();
+    
 
     if (!mounted) return;
     setState(() => saving = false);
@@ -390,7 +418,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                   ),
                               decoration: InputDecoration(
                                 labelText: price.tr(),
-                                prefixIcon: Icon(Icons.attach_money),
+                                prefixIcon: Icon(Icons.wallet),
                                 border: OutlineInputBorder(),
                               ),
                             ),

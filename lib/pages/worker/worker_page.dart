@@ -380,7 +380,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      "${taskL.tr()} #${t["id"]}",
+                                                      "${tasksK.tr()} : ${index+1}/${tasks.length}",
                                                       style: const TextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
