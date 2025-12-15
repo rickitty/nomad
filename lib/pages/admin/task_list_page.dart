@@ -26,32 +26,61 @@ class _TaskListPageState extends State<TaskListPage> {
   String phone = "";
   bool filteredByPhone = false;
 
-  final Map<int, String> taskStatuses = {
-    0: "None",
-    1: "Assigned",
-    2: "InProgress",
-    3: "AwaitingReview",
-    4: "Completed",
-    5: "Canceled",
-    6: "Stopped",
+  final Map<int, String> taskStatusKeys = {
+    0: noneStatus,
+    1: assignedStatus,
+    2: inprogressStatus,
+    3: awaitingreviewStatus,
+    4: completedStatus,
+    5: canceledStatus,
+    6: stopedStatus,
   };
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case "Completed":
+  String statusText(int code) => (taskStatusKeys[code] ?? noneStatus).tr();
+
+  Color statusColor(int code) {
+    switch (code) {
+      case 4: // Completed
         return Colors.green;
-      case "Canceled":
-      case "Stopped":
+      case 5: // Canceled
+      case 6: // Stopped
         return Colors.red;
-      case "InProgress":
-      case "AwaitingReview":
+      case 2: // InProgress
+      case 3: // AwaitingReview
         return Colors.orange;
-      case "Assigned":
+      case 1: // Assigned
         return kPrimaryColor;
       default:
         return Colors.grey;
     }
   }
+
+  int _parseStatusCode(dynamic raw) {
+  if (raw is int) return raw;
+
+  final s = (raw ?? "").toString();
+
+  final n = int.tryParse(s);
+  if (n != null) return n;
+
+  switch (s) {
+    case "Assigned":
+      return 1;
+    case "InProgress":
+      return 2;
+    case "AwaitingReview":
+      return 3;
+    case "Completed":
+      return 4;
+    case "Canceled":
+      return 5;
+    case "Stopped":
+      return 6;
+    default:
+      return 0;
+  }
+}
+
 
   Future<void> loadAllTasks() async {
     setState(() => loading = true);
@@ -61,7 +90,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
       if (!headers.containsKey('Authorization')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('token_not_found'.tr())),
+          SnackBar(content: Text(token_not_found.tr())),
         );
         return;
       }
@@ -74,18 +103,19 @@ class _TaskListPageState extends State<TaskListPage> {
       if (res.statusCode == 200) {
         setState(() {
           tasks = jsonDecode(utf8.decode(res.bodyBytes));
+          filteredByPhone = false;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${'error_loading'.tr()}: ${res.body}')),
+          SnackBar(content: Text('${errorLoading.tr()}: ${res.body}')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${'error'.tr()}: $e')),
+        SnackBar(content: Text('${error.tr()}: $e')),
       );
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -96,9 +126,7 @@ class _TaskListPageState extends State<TaskListPage> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return null;
-      }
+      if (permission == LocationPermission.denied) return null;
     }
     if (permission == LocationPermission.deniedForever) return null;
 
@@ -133,7 +161,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
       if (!headers.containsKey('Authorization')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('token_not_found'.tr())),
+          SnackBar(content: Text(token_not_found.tr())),
         );
         return;
       }
@@ -146,32 +174,31 @@ class _TaskListPageState extends State<TaskListPage> {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('status_updated'.tr())),
+          SnackBar(content: Text(status_updated.tr())),
         );
         loadAllTasks();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${'error'.tr()}: ${response.body}")),
+          SnackBar(content: Text("${error.tr()}: ${response.body}")),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${'error'.tr()}: $e")),
+        SnackBar(content: Text("${error.tr()}: $e")),
       );
     }
   }
 
-  void _showStatusDialog(String taskId) {
+  void _showStatusDialog(String taskId, int currentStatus) {
     showDialog(
       context: context,
       builder: (context) {
-        int selected = 0;
+        int selected = currentStatus;
 
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            'change_status'.tr(),
+            ChangeStatus.tr(),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           content: StatefulBuilder(
@@ -182,17 +209,17 @@ class _TaskListPageState extends State<TaskListPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                 ),
-                items: taskStatuses.entries
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e.key,
-                        child: Text("${e.key} - ${e.value}"),
-                      ),
-                    )
-                    .toList(),
+                items: taskStatusKeys.entries.map((e) {
+                  return DropdownMenuItem(
+                    value: e.key,
+                    child: Text("${e.key} - ${e.value.tr()}"),
+                  );
+                }).toList(),
                 onChanged: (value) {
                   if (value == null) return;
                   setStateDialog(() => selected = value);
@@ -241,8 +268,7 @@ class _TaskListPageState extends State<TaskListPage> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     );
   }
 
@@ -259,7 +285,7 @@ class _TaskListPageState extends State<TaskListPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      drawer: const AppDrawer(current: DrawerRoute.taskList,),
+      drawer: const AppDrawer(current: DrawerRoute.taskList),
       backgroundColor: const Color(0xFFF5F9FF),
       appBar: AppBar(
         title: Text(
@@ -319,19 +345,28 @@ class _TaskListPageState extends State<TaskListPage> {
                         itemCount: tasks.length,
                         itemBuilder: (context, index) {
                           final t = tasks[index];
-                          final status = (t["status"] ?? "").toString();
-                          final markets = t["markets"] ?? [];
-                          final start =
-                              t["startTime"]?.toString().split("T").first ?? "";
+
+                          final String taskId = (t["id"] ?? "").toString();
+                          final int statusCode = _parseStatusCode(t["status"]);
+                          final String statusLabel = statusText(statusCode);
+                          final Color color = statusColor(statusCode);
+
+                          final markets = (t["markets"] as List?) ?? [];
+
+                          final start = t["startTime"]
+                                  ?.toString()
+                                  .split("T")
+                                  .first ??
+                              "";
                           final end =
                               t["deadLine"]?.toString().split("T").first ?? "";
-
-                          final statusColor = _statusColor(status);
 
                           return Card(
                             elevation: 2,
                             margin: const EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 2),
+                              vertical: 8,
+                              horizontal: 2,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -340,27 +375,28 @@ class _TaskListPageState extends State<TaskListPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // верхняя строка: ID + статус
                                   Row(
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          "${tasksK.tr()}: ${index+1}/${tasks.length}",
+                                          "${tasksK.tr()}: ${index + 1}/${tasks.length}",
                                           style: textTheme.bodyMedium?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
                                       GestureDetector(
-                                        onTap: () =>
-                                            _showStatusDialog(t["id"]),
+                                        onTap: () => _showStatusDialog(
+                                          taskId,
+                                          statusCode,
+                                        ),
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 10,
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: statusColor.withOpacity(0.15),
+                                            color: color.withOpacity(0.15),
                                             borderRadius:
                                                 BorderRadius.circular(20),
                                           ),
@@ -369,14 +405,14 @@ class _TaskListPageState extends State<TaskListPage> {
                                               Icon(
                                                 Icons.circle,
                                                 size: 10,
-                                                color: statusColor,
+                                                color: color,
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
-                                                status,
+                                                statusLabel,
                                                 style: textTheme.bodySmall
                                                     ?.copyWith(
-                                                  color: statusColor,
+                                                  color: color,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -386,9 +422,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                       ),
                                     ],
                                   ),
-
                                   const SizedBox(height: 10),
-
                                   Text(
                                     "${startedAt.tr()}: $start",
                                     style: textTheme.bodySmall?.copyWith(
@@ -401,9 +435,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                       color: Colors.grey[700],
                                     ),
                                   ),
-
                                   const SizedBox(height: 12),
-
                                   Text(
                                     "${Markets.tr()}:",
                                     style: textTheme.bodyMedium?.copyWith(
@@ -413,6 +445,13 @@ class _TaskListPageState extends State<TaskListPage> {
                                   const SizedBox(height: 4),
 
                                   ...markets.map<Widget>((m) {
+                                    final nameValue = (m["name"] ?? "").toString();
+                                    final addressValue =
+                                        (m["address"] ?? "").toString();
+                                    final typeValue = (m["type"] ?? "").toString();
+                                    final workHoursValue =
+                                        (m["workHours"] ?? "").toString();
+
                                     return Container(
                                       margin: const EdgeInsets.only(top: 6),
                                       padding: const EdgeInsets.all(10),
@@ -425,31 +464,27 @@ class _TaskListPageState extends State<TaskListPage> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            "${name.tr()}: ${m["name"]}",
-                                            style: textTheme.bodyMedium
-                                                ?.copyWith(
+                                            "${name.tr()}: $nameValue",
+                                            style: textTheme.bodyMedium?.copyWith(
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                          if ((m["address"] ?? "").toString().isNotEmpty)
+                                          if (addressValue.isNotEmpty)
                                             Text(
-                                              "${Address.tr()}: ${m["address"]}",
-                                              style:
-                                                  textTheme.bodySmall?.copyWith(
+                                              "${Address.tr()}: $addressValue",
+                                              style: textTheme.bodySmall?.copyWith(
                                                 color: Colors.grey[700],
                                               ),
                                             ),
                                           Text(
-                                            "${Type.tr()}: ${m["type"]}",
-                                            style:
-                                                textTheme.bodySmall?.copyWith(
+                                            "${Type.tr()}: $typeValue",
+                                            style: textTheme.bodySmall?.copyWith(
                                               color: Colors.grey[700],
                                             ),
                                           ),
                                           Text(
-                                            "${WorkHours.tr()}: ${m["workHours"]}",
-                                            style:
-                                                textTheme.bodySmall?.copyWith(
+                                            "${WorkHours.tr()}: $workHoursValue",
+                                            style: textTheme.bodySmall?.copyWith(
                                               color: Colors.grey[700],
                                             ),
                                           ),
@@ -459,7 +494,6 @@ class _TaskListPageState extends State<TaskListPage> {
                                   }).toList(),
 
                                   const SizedBox(height: 12),
-
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: TextButton.icon(
@@ -468,7 +502,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                           context,
                                           MaterialPageRoute(
                                             builder: (_) => TaskDetailsPage(
-                                              taskId: t["id"],
+                                              taskId: taskId,
                                             ),
                                           ),
                                         );
@@ -476,7 +510,8 @@ class _TaskListPageState extends State<TaskListPage> {
                                       icon: const Icon(Icons.arrow_forward),
                                       label: Text(taskDetails.tr()),
                                       style: TextButton.styleFrom(
-                                        foregroundColor: kPrimaryColor,
+                                        foregroundColor:
+                                            const Color.fromARGB(255, 58, 88, 113),
                                       ),
                                     ),
                                   ),

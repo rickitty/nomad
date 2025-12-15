@@ -155,6 +155,8 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                       // Чипы языков
                       Row(
                         children: [
+                          _LanguageChip(label: "Қазақша", selected: _selectedLang== 'kz', onTap: ()=>_changeLang('kz')),
+                          const SizedBox(width: 8),
                           
                           _LanguageChip(
                             label: 'Русский',

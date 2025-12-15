@@ -54,7 +54,7 @@ class TaskDetailsPage extends StatelessWidget {
         throw Exception('Неожиданный формат ответа');
       }
     } else {
-      throw Exception("Ошибка загрузки: ${response.body}");
+      throw Exception("${errorLoading.tr()}: ${response.body}");
     }
   }
 

@@ -229,6 +229,13 @@ class AppDrawer extends StatelessWidget {
                 Navigator.pop(context);
               },
             ),
+               ListTile(
+              title: const Text("Қазақша"),
+              onTap: () {
+                context.setLocale(const Locale('kz'));
+                Navigator.pop(context);
+              },
+            ),
           ],
         ),
       ),

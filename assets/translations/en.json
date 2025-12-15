@@ -51,6 +51,7 @@
     "Assigning_objects": "Assigning objects",
     "Worker_search": "Worker search",
     "Select_a_worker": "Select a worker",
+    "Task_details":"Task details",
     "Objects_search": "Objects search",
     "No_name": "No name",
     "No_address": "No address",
@@ -117,6 +118,13 @@
     "noObjects": "No objects for this task",
     "changeStatus":"Change task status",
     "price_tag": "Price tag",
+        "noneStatus": "None",
+    "assignedStatus": "Assigned",
+    "inprogressStatus": "InProgress",
+    "awaitingreviewStatus": "AwaitingReview",
+    "completedStatus": "Completed",
+    "canceledStatus": "Canceled",
+    "stopedStatus": "Stopped",
     "Current_price": "Current price",
     "photo_fix": "Photo fixation",
     "photo_disclaimer": "Take two pictures: general view of the product and close-up of the price tag.",
@@ -176,5 +184,7 @@
     "onboardingLocationGranted": "Location access granted.",
     "onboardingLocationDenied": "Location access not granted. You can change this in your device settings.",
     "onboardingSkip": "Skip, I’ll set it up later",
-    "onboardingContinueWithoutLocation": "Continue without location"
+    "onboardingContinueWithoutLocation": "Continue without location",
+    "status_updated":"Status updated",
+    "token_not_found":"Token not found"
 }

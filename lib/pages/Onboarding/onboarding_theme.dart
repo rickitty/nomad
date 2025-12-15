@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 class OnboardingTheme {
   static const Color primaryColor = Color.fromARGB(255, 87, 174, 255);
 
-  static final TextStyle tag = GoogleFonts.poppins(
+  static final TextStyle tag = GoogleFonts.notoSans(
     textStyle: const TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w600,
@@ -13,7 +13,7 @@ class OnboardingTheme {
     ),
   );
 
-  static final TextStyle title = GoogleFonts.poppins(
+  static final TextStyle title = GoogleFonts.notoSans(
     textStyle: const TextStyle(
       color: Color(0xFF333333),
       fontSize: 24,
@@ -22,7 +22,7 @@ class OnboardingTheme {
     ),
   );
 
-  static final TextStyle body = GoogleFonts.poppins(
+  static final TextStyle body = GoogleFonts.notoSans(
     textStyle: const TextStyle(
       color: Color(0xFF666666),
       fontSize: 13.5,
@@ -30,19 +30,18 @@ class OnboardingTheme {
     ),
   );
 
-  static final TextStyle smallInfo = GoogleFonts.poppins(
+  static final TextStyle smallInfo = GoogleFonts.notoSans(
     textStyle: const TextStyle(
       color: Color(0xFF888888),
       fontSize: 12,
     ),
   );
 
-  static final ButtonStyle primaryButton =
-      ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
-        elevation: 0,
-      );
+  static final ButtonStyle primaryButton = ElevatedButton.styleFrom(
+    backgroundColor: primaryColor,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(26),
+    ),
+    elevation: 0,
+  );
 }
