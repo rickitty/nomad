@@ -345,7 +345,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          "${taskID.tr()}: ${t["id"]}",
+                                          "${tasksK.tr()}: ${index+1}/${tasks.length}",
                                           style: textTheme.bodyMedium?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),

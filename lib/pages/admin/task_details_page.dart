@@ -135,7 +135,7 @@ class TaskDetailsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              taskID.tr(),
+                              tasksK.tr(),
                               style: textTheme.bodySmall?.copyWith(
                                 color: Colors.grey[600],
                               ),

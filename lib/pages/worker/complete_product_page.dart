@@ -56,7 +56,6 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     super.dispose();
   }
 
-  // ---------- GEO ----------
   Future<void> _initLocation() async {
     try {
       Position position = await Geolocator.getCurrentPosition(
@@ -106,7 +105,6 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     }
   }
 
-  // ---------- CAMERA ----------
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
@@ -169,7 +167,6 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     );
   }
 
-  // ---------- SAVE (PUT) ----------
  Future<void> _sendData() async {
   final pos = await _getFreshPosition();
 
@@ -207,7 +204,6 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   setState(() => saving = true);
 
   try {
-    // Берём токен, который сохранили при логине
     final token = await Config.getToken();
     if (token == null || token.isEmpty) {
       setState(() => saving = false);
@@ -232,7 +228,6 @@ request.fields['Lat'] = toCommaCoord(lat!);
 
 
 
-    // 🔹 файлы
     if (kIsWeb) {
       final productBytes = await _photoProduct!.readAsBytes();
       final priceBytes = await _photoPrice!.readAsBytes();

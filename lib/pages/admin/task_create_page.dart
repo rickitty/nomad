@@ -267,11 +267,11 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                             ),
                             side: BorderSide(
                               color: Color.fromARGB(
-                              255,
-                              84,
-                              123,
-                              154,
-                            ).withOpacity(0.7),
+                                255,
+                                84,
+                                123,
+                                154,
+                              ).withOpacity(0.7),
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
