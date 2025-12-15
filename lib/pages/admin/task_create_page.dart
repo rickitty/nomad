@@ -1,8 +1,11 @@
+// ignore_for_file: unused_element
+
 import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:price_book/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -121,16 +124,16 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       if (res.statusCode == 200 || res.statusCode == 201) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("task_is_made".tr())));
+        ).showSnackBar(SnackBar(content: Text(taskIsMade.tr())));
       } else {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Ошибка: ${res.body}")));
+        ).showSnackBar(SnackBar(content: Text("${error.tr()}: ${res.body}")));
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка: $e")));
+      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
     }
   }
 
@@ -163,6 +166,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FF),
+      drawer: AppDrawer(current: DrawerRoute.taskCreate),
       appBar: AppBar(
         title: Text(
           createATask.tr(),

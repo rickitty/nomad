@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:price_book/config.dart';
+import 'package:price_book/drawer.dart';
 import 'dart:convert';
 
 import '../../keys.dart';
@@ -66,6 +67,7 @@ class _MarketsPageState extends State<MarketsPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FF),
+      drawer: AppDrawer(current: DrawerRoute.markets),
       appBar: AppBar(
         title: Text(
           Markets.tr(),
@@ -98,20 +100,22 @@ class _MarketsPageState extends State<MarketsPage> {
               ),
             )
           : markets.isEmpty
-              ? _buildEmptyState(textTheme)
-              : RefreshIndicator(
-                  onRefresh: loadMarkets,
-                  color: kPrimaryColor,
-                  child: ListView.builder(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                    itemCount: markets.length,
-                    itemBuilder: (context, index) {
-                      final m = markets[index];
-                      return _MarketCard(market: m);
-                    },
-                  ),
+          ? _buildEmptyState(textTheme)
+          : RefreshIndicator(
+              onRefresh: loadMarkets,
+              color: kPrimaryColor,
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
                 ),
+                itemCount: markets.length,
+                itemBuilder: (context, index) {
+                  final m = markets[index];
+                  return _MarketCard(market: m);
+                },
+              ),
+            ),
     );
   }
 
@@ -139,9 +143,7 @@ class _MarketsPageState extends State<MarketsPage> {
             const SizedBox(height: 4),
             Text(
               addTask.tr(),
-              style: textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],
@@ -154,7 +156,7 @@ class _MarketsPageState extends State<MarketsPage> {
 class _MarketCard extends StatelessWidget {
   final Map<String, dynamic> market;
 
-  const _MarketCard({super.key, required this.market});
+  const _MarketCard({required this.market});
 
   @override
   Widget build(BuildContext context) {
@@ -169,13 +171,10 @@ class _MarketCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-        },
+        onTap: () {},
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
@@ -188,11 +187,7 @@ class _MarketCard extends StatelessWidget {
                   color: kPrimaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.store,
-                  color: kPrimaryColor,
-                  size: 22,
-                ),
+                child: const Icon(Icons.store, color: kPrimaryColor, size: 22),
               ),
               const SizedBox(width: 12),
               // текстовая часть
@@ -242,11 +237,11 @@ class _MarketCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: Color.fromARGB(
-                              255,
-                              84,
-                              123,
-                              154,
-                            ).withOpacity(0.12),
+                                255,
+                                84,
+                                123,
+                                154,
+                              ).withOpacity(0.12),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Row(
@@ -254,12 +249,7 @@ class _MarketCard extends StatelessWidget {
                                 const Icon(
                                   Icons.category_outlined,
                                   size: 14,
-                                  color: Color.fromARGB(
-                              255,
-                              84,
-                              123,
-                              154,
-                            ),
+                                  color: Color.fromARGB(255, 84, 123, 154),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(

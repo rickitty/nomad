@@ -1,19 +1,21 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:price_book/config.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/admin/markets_page.dart';
 import 'package:price_book/pages/admin/task_create_page.dart';
 import 'package:price_book/pages/admin/task_list_page.dart';
 import 'package:price_book/pages/login_screen.dart';
-import 'package:price_book/pages/my_profile_page.dart';
 import 'package:price_book/pages/worker/worker_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
+enum DrawerRoute { worker, markets, taskList, taskCreate }
+
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  final DrawerRoute current;
+
+  const AppDrawer({super.key, required this.current});
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +111,7 @@ class AppDrawer extends StatelessWidget {
                     title: myTasks.tr(),
                     onTap: () {
                       Navigator.pop(context);
+                      if (current == DrawerRoute.worker) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const WorkerPage()),
@@ -121,6 +124,7 @@ class AppDrawer extends StatelessWidget {
                     title: createATask.tr(),
                     onTap: () {
                       Navigator.pop(context);
+                      if (current == DrawerRoute.taskCreate) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -135,6 +139,7 @@ class AppDrawer extends StatelessWidget {
                     title: Markets.tr(),
                     onTap: () {
                       Navigator.pop(context);
+                      if (current == DrawerRoute.markets) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const MarketsPage()),
@@ -147,6 +152,7 @@ class AppDrawer extends StatelessWidget {
                     title: statusSidebar.tr(),
                     onTap: () {
                       Navigator.pop(context);
+                      if (current == DrawerRoute.taskList) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const TaskListPage()),
@@ -249,7 +255,6 @@ class _DrawerItem extends StatelessWidget {
   final bool isDestructive;
 
   const _DrawerItem({
-    super.key,
     required this.icon,
     required this.title,
     required this.onTap,

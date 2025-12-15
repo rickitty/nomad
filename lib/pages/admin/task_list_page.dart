@@ -259,7 +259,7 @@ class _TaskListPageState extends State<TaskListPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      drawer: const AppDrawer(),
+      drawer: const AppDrawer(current: DrawerRoute.taskList,),
       backgroundColor: const Color(0xFFF5F9FF),
       appBar: AppBar(
         title: Text(

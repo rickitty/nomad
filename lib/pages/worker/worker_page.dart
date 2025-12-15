@@ -193,7 +193,7 @@ class _WorkerPageState extends State<WorkerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: AppDrawer(),
+      drawer: AppDrawer(current: DrawerRoute.worker,),
       appBar: AppBar(
         title: Text(tasksK.tr()),
         centerTitle: true,
