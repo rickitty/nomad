@@ -166,7 +166,8 @@ class _MarketCard extends StatelessWidget {
     final address = (market["address"] ?? "").toString();
     final type = (market["type"] ?? "").toString();
     final workHours = (market["workHours"] ?? "").toString();
-    final id = (market["id"] ?? market["_id"] ?? "").toString();
+    final allowedD=(market["geoAccuracy"]?? "").toString();
+    // final id = (market["id"] ?? market["_id"] ?? "").toString();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -294,15 +295,7 @@ class _MarketCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    // id внизу мелким шрифтом
-                    if (id.isNotEmpty)
-                      Text(
-                        "ID: $id",
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[500],
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
+                    Text("${allowedDistance.tr()}: $allowedD")
                   ],
                 ),
               ),

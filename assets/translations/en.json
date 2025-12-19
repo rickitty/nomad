@@ -186,5 +186,10 @@
     "onboardingSkip": "Skip, I’ll set it up later",
     "onboardingContinueWithoutLocation": "Continue without location",
     "status_updated":"Status updated",
-    "token_not_found":"Token not found"
+    "token_not_found":"Token not found",
+    "createMarket":"Create market",
+    "allowedDistance":"Allowed distance",
+    "task":"Task",
+    "newMarket":"New market",
+    "fillInTheMarketDetails":"Fill in the market details"
 }

@@ -11,8 +11,15 @@ const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
 class TaskDetailsPage extends StatelessWidget {
   final String taskId;
+  final int taskNumber;
+  final int totalTasks;
 
-  const TaskDetailsPage({super.key, required this.taskId});
+  const TaskDetailsPage({
+    super.key,
+    required this.taskId,
+    required this.taskNumber,
+    required this.totalTasks,
+  });
   String getLocalized(dynamic data, String locale) {
     if (data == null) return "";
 
@@ -102,7 +109,7 @@ class TaskDetailsPage extends StatelessWidget {
           }
 
           final taskList = snapshot.data!;
-          final first = taskList.first;
+          // final first = taskList.first;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -114,8 +121,10 @@ class TaskDetailsPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -135,14 +144,14 @@ class TaskDetailsPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              tasksK.tr(),
+                              task.tr(),
                               style: textTheme.bodySmall?.copyWith(
                                 color: Colors.grey[600],
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              (first["id"] ?? first["_id"] ?? "").toString(),
+                              "$taskNumber / $totalTasks",
                               style: textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -170,8 +179,10 @@ class TaskDetailsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -260,8 +271,7 @@ class TaskDetailsPage extends StatelessWidget {
                                   Expanded(
                                     child: Text(
                                       name.isEmpty ? "-" : name,
-                                      style:
-                                          textTheme.bodyMedium?.copyWith(),
+                                      style: textTheme.bodyMedium?.copyWith(),
                                     ),
                                   ),
                                 ],

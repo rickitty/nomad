@@ -88,6 +88,7 @@ const completeV = 'completedV';
 const completedC = 'completedC';
 const noNameM = 'nonameM';
 const waiting = 'waiting';
+const task='task';
 
 const Latitude = 'Latitude';
 const statusEr = 'statusError';
@@ -199,3 +200,7 @@ const onboardingLocationDenied = 'onboardingLocationDenied';
 const onboardingSkip = 'onboardingSkip';
 const onboardingContinueWithoutLocation = 'onboardingContinueWithoutLocation';
 const succsessfulCreateMarket = "successfulCreateMarket";
+const createMarketK="createMarket";
+const allowedDistance="allowedDistance";
+const newMarket="newMarket";
+const fillInTheMarketDetails="fillInTheMarketDetails";

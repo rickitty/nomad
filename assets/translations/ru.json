@@ -186,5 +186,10 @@
     "nonameM":"Без названия",
     "unknown":"неизвестно",
     "NoProducts":"Нет продуктов",
-    "loading_markets_error":"Ошибка при загрузке рынков"
+    "loading_markets_error":"Ошибка при загрузке рынков",
+    "createMarket":"Добавить маркет",
+    "allowedDistance":"Допустимое расстояние",
+    "task":"Задача",
+    "newMarket":"Новый маркет",
+    "fillInTheMarketDetails":"Заполните данные о маркете"
 }

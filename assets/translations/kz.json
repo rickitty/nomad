@@ -189,5 +189,10 @@
     "onboardingLocationGranted": "Геолокацияға қолжетімділік берілді.",
     "onboardingLocationDenied": "Геолокацияға қолжетімділік берілмеді. Оны құрылғы баптауларынан өзгерте аласыз.",
     "onboardingSkip": "Өткізіп жіберу, кейін баптаймын",
-    "onboardingContinueWithoutLocation": "Геолокациясыз жалғастыру"
+    "onboardingContinueWithoutLocation": "Геолокациясыз жалғастыру",
+    "createMarket":"Маркет қосу",
+    "allowedDistance":"Рұқсат етілген қашықтық",
+    "task":"Тапсырма",
+    "newMarket":"Жана маркет",
+    "fillInTheMarketDetails":"Маркет туралы ақпаратты толтырыңыз"
 }

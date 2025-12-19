@@ -396,8 +396,6 @@ class _WorkerPageState extends State<WorkerPage> {
                                                       ],
                                                     ),
                                                   ),
-
-                                                  // ✅ ВОТ ТУТ БЫЛА ОШИБКА: status не существовал
                                                   buildStatusBadge(code),
                                                 ],
                                               ),
@@ -488,7 +486,6 @@ class _WorkerPageState extends State<WorkerPage> {
                                                 child: SizedBox(
                                                   height: 40,
                                                   child: ElevatedButton.icon(
-                                                    // ✅ И ТУТ: передаём code, а не status
                                                     onPressed: () => _openTask(t["id"].toString(), code),
                                                     icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                                                     label: Text(open.tr()),

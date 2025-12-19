@@ -50,9 +50,9 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
 
     final token = await Config.getToken();
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Ошибка: токен не задан")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Ошибка: токен не задан")));
       setState(() => loading = false);
       return;
     }
@@ -65,7 +65,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
         "lat": double.tryParse(_lat.text) ?? 0,
       },
       "geoAccuracy": int.tryParse(_accuracy.text) ?? 0,
-      "type": _selectedType ?? "",    
+      "type": _selectedType ?? "",
       "workHours": _workHours.text,
     };
 
@@ -82,7 +82,8 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
     print("HEADERS: $headers");
     print("BODY: $jsonBody");
 
-    final curl = """
+    final curl =
+        """
 curl -X POST '$uri' \\
   -H 'Content-Type: application/json' \\
   -H 'Authorization: Bearer $token' \\
@@ -91,11 +92,7 @@ curl -X POST '$uri' \\
     print("CURL:\n$curl");
 
     try {
-      final response = await http.post(
-        uri,
-        headers: headers,
-        body: jsonBody,
-      );
+      final response = await http.post(uri, headers: headers, body: jsonBody);
 
       final bodyStr = utf8.decode(response.bodyBytes);
 
@@ -113,20 +110,18 @@ curl -X POST '$uri' \\
       }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(succsessfulCreateMarket.tr())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(succsessfulCreateMarket.tr())));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Ошибка: ${data ?? bodyStr}"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Ошибка: ${data ?? bodyStr}")));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Ошибка сети: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Ошибка сети: $e")));
     }
 
     setState(() => loading = false);
@@ -139,12 +134,7 @@ curl -X POST '$uri' \\
   }) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: icon != null
-          ? Icon(
-              icon,
-              color: kPrimaryColor,
-            )
-          : null,
+      prefixIcon: icon != null ? Icon(icon, color: kPrimaryColor) : null,
       suffixIcon: suffix,
       filled: true,
       fillColor: Colors.white,
@@ -193,8 +183,7 @@ curl -X POST '$uri' \\
   String _formatTimeRange(TimeOfDay start, TimeOfDay end) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
 
-    final startStr =
-        "${twoDigits(start.hour)}:${twoDigits(start.minute)}";
+    final startStr = "${twoDigits(start.hour)}:${twoDigits(start.minute)}";
     final endStr = "${twoDigits(end.hour)}:${twoDigits(end.minute)}";
 
     return "$startStr - $endStr";
@@ -207,7 +196,7 @@ curl -X POST '$uri' \\
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FF),
       appBar: AppBar(
-        title: const Text("Create Market"),
+        title: Text(createMarketK.tr()),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
@@ -223,13 +212,15 @@ curl -X POST '$uri' \\
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Новый объект",
+                      newMarket.tr(),
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1F2933),
@@ -237,7 +228,7 @@ curl -X POST '$uri' \\
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Заполните данные о торговой точке",
+                      fillInTheMarketDetails.tr(),
                       style: textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[600],
                       ),
@@ -268,8 +259,7 @@ curl -X POST '$uri' \\
                         Expanded(
                           child: TextField(
                             controller: _lat,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                               signed: false,
                             ),
@@ -283,8 +273,7 @@ curl -X POST '$uri' \\
                         Expanded(
                           child: TextField(
                             controller: _lng,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                               signed: false,
                             ),
@@ -302,7 +291,7 @@ curl -X POST '$uri' \\
                       controller: _accuracy,
                       keyboardType: TextInputType.number,
                       decoration: _inputDecoration(
-                        label: GeoAccuracy.tr(),
+                        label: allowedDistance.tr(),
                         icon: Icons.gps_fixed,
                       ),
                     ),
@@ -354,8 +343,9 @@ curl -X POST '$uri' \\
                         onPressed: loading ? null : createMarket,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
-                          disabledBackgroundColor:
-                              kPrimaryColor.withOpacity(0.5),
+                          disabledBackgroundColor: kPrimaryColor.withOpacity(
+                            0.5,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -367,8 +357,9 @@ curl -X POST '$uri' \\
                                 width: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.4,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : Text(

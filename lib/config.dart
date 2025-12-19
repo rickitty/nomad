@@ -8,21 +8,21 @@ class Config {
   static const _refreshTokenKey = 'refreshToken';
   static const _phoneKey = 'phone';
 
-  /// Сохранить токены и телефон после логина
   static Future<void> saveAuthData({
     required String token,
     required String refreshToken,
     required String phone,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    print("DEBUG saveAuthData: token=$token, refreshToken=$refreshToken, phone=$phone");
+    print(
+      "DEBUG saveAuthData: token=$token, refreshToken=$refreshToken, phone=$phone",
+    );
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_refreshTokenKey, refreshToken);
     await prefs.setString(_phoneKey, phone);
   }
 
-  
-    static Future<String?> getToken() async {
+  static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(_tokenKey);
     print('DEBUG getToken: token from prefs = $token');
@@ -41,21 +41,9 @@ class Config {
     print('DEBUG headers: $headers');
     return headers;
   }
+
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshTokenKey);
+  }
 }
-
-
-//   static Future<void> updateToken(String newToken) async {
-//     bearerToken = newToken;
-//     final prefs = await SharedPreferences.getInstance();
-//     await prefs.setString("BearerToken", newToken);
-//   }
-// }
-
-// final createmarket = '$baseUrl/market/create-market';
-// final getMarkets = '$baseUrl/market/markets';
-// final alltasks = '$baseUrl/tasks/all';
-// final createTaskUrl = '$baseUrl/tasks/create-task';
-// final sendCode = '$baseUrl/proxy/sendcode';
-// final login = '$baseUrl/proxy/login';
-// final refreshToken = '$baseUrl/proxy/refresh';
-// final profileUrl = '$baseUrl/proxy/profile';
