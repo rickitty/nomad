@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const QYZ_API_BASE = 'https://qyzylorda-idm-test.curs.kz/api/v1/monitoring';
 
 class Config {
-  static const _tokenKey = 'token';
+  static const _tokenKey = 'accessToken';
   static const _refreshTokenKey = 'refreshToken';
   static const _phoneKey = 'phone';
 
@@ -15,7 +15,7 @@ class Config {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     print(
-      "DEBUG saveAuthData: token=$token, refreshToken=$refreshToken, phone=$phone",
+      "DEBUG saveAuthData: accessToken=$token, refreshToken=$refreshToken, phone=$phone",
     );
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_refreshTokenKey, refreshToken);
@@ -40,6 +40,11 @@ class Config {
     };
     print('DEBUG headers: $headers');
     return headers;
+  }
+
+  static Future<String?> getPhone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_phoneKey);
   }
 
   static Future<String?> getRefreshToken() async {

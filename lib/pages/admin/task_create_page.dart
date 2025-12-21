@@ -4,12 +4,10 @@ import 'dart:convert';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:price_book/drawer.dart';
+import 'package:price_book/api_client.dart';
+import 'package:price_book/pages/widgets/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../config.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
@@ -23,8 +21,9 @@ class CreateTaskPage extends StatefulWidget {
 class _CreateTaskPageState extends State<CreateTaskPage> {
   List markets = [];
   bool loadingMarkets = true;
-
-  String selectedWorkerPhone = ""; // берём из SharedPreferences
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = '';
+  String selectedWorkerPhone = "";
   List<String> selectedMarketIds = [];
   DateTime? selectedDate;
 
@@ -53,21 +52,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     setState(() => loadingMarkets = true);
 
     try {
-      final headers = await Config.authorizedJsonHeaders();
-
-      if (!headers.containsKey('Authorization')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Токен не найден. Авторизуйтесь заново.'),
-          ),
-        );
-        setState(() => loadingMarkets = false);
-        return;
-      }
-
-      final response = await http.get(
-        Uri.parse("$QYZ_API_BASE/markets"),
-        headers: headers,
+      final response = await ApiClient.get(
+        '/markets',
+        context, // 🔥 важно
       );
 
       if (response.statusCode == 200) {
@@ -94,7 +81,6 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       return;
     }
 
-    // подправляем дату на +5 часов
     final correctedDate = selectedDate!.add(const Duration(hours: 5));
 
     final body = {
@@ -104,21 +90,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     };
 
     try {
-      final headers = await Config.authorizedJsonHeaders();
-
-      if (!headers.containsKey('Authorization')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Токен не найден. Авторизуйтесь заново.'),
-          ),
-        );
-        return;
-      }
-
-      final res = await http.post(
-        Uri.parse("$QYZ_API_BASE/task/create"),
-        headers: headers,
-        body: jsonEncode(body),
+      final res = await ApiClient.post(
+        '/task/create',
+        body,
+        context, // 🔥 важно
       );
 
       if (res.statusCode == 200 || res.statusCode == 201) {
@@ -160,9 +135,23 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final isFormValid = selectedMarketIds.isNotEmpty && selectedDate != null;
+    final filteredMarkets = markets.where((m) {
+      if (searchQuery.isEmpty) return true;
+
+      final name = (m["name"] ?? "").toString().toLowerCase();
+      final address = (m["address"] ?? "").toString().toLowerCase();
+
+      return name.contains(searchQuery) || address.contains(searchQuery);
+    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FF),
@@ -312,6 +301,12 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     ),
                     child: Column(
                       children: [
+                        Text(
+                          Markets.tr(),
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -319,13 +314,31 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                           ),
                           child: Row(
                             children: [
-                              Text(
-                                Markets.tr(),
-                                style: textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  decoration: InputDecoration(
+                                    hintText: search.tr(),
+                                    prefixIcon: const Icon(Icons.search),
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 0,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      searchQuery = value.toLowerCase().trim();
+                                    });
+                                  },
                                 ),
                               ),
-                              const Spacer(),
+
                               if (selectedMarketIds.isNotEmpty)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -380,9 +393,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                                   ),
                                 )
                               : ListView.builder(
-                                  itemCount: markets.length,
+                                  itemCount: filteredMarkets.length,
                                   itemBuilder: (context, index) {
-                                    final m = markets[index];
+                                    final m = filteredMarkets[index];
                                     final marketId = (m["id"] ?? m["_id"] ?? "")
                                         .toString();
                                     final checked = selectedMarketIds.contains(

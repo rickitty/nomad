@@ -194,5 +194,8 @@
     "allowedDistance":"Рұқсат етілген қашықтық",
     "task":"Тапсырма",
     "newMarket":"Жана маркет",
-    "fillInTheMarketDetails":"Маркет туралы ақпаратты толтырыңыз"
+    "fillInTheMarketDetails":"Маркет туралы ақпаратты толтырыңыз",
+    "Search":"Іздеу",
+    "openCamera":"Камераны ашу",
+    "wereGettingYourLocation":"Сіздің геолокацияңызды алып жатырмыз, күте тұрыңыз..."
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -6,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import '../../config.dart';
+import 'package:price_book/api_client.dart';
 import '../../keys.dart'; // тут должен быть baseUrl
 
 class CompleteGoodPage extends StatefulWidget {
@@ -39,6 +40,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   CameraController? _cameraController;
   Future<void>? _initCameraFuture;
 
+  bool priceError = false;
+  bool showCameraSection = false;
+
   XFile? _photoProduct;
   XFile? _photoPrice;
 
@@ -47,6 +51,13 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     super.initState();
     _initLocation();
     _initCamera();
+    Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      _getFreshPosition();
+    });
   }
 
   @override
@@ -76,34 +87,35 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       );
     }
   }
-  Future<Position> _getFreshPosition() async {
-  final pos = await Geolocator.getCurrentPosition(
-    desiredAccuracy: LocationAccuracy.bestForNavigation,
-  );
-  setState(() {
-    lat = pos.latitude;
-    lng = pos.longitude;
-    accuracy = pos.accuracy;
-  });
-  return pos;
-}
 
-  Future<void> _updateLocation() async {
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-      );
-      setState(() {
-        lat = position.latitude;
-        lng = position.longitude;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Не удалось получить геолокацию: $e")),
-      );
-    }
+  Future<Position> _getFreshPosition() async {
+    final pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.bestForNavigation,
+    );
+    setState(() {
+      lat = pos.latitude;
+      lng = pos.longitude;
+      accuracy = pos.accuracy;
+    });
+    return pos;
   }
+
+  // Future<void> _updateLocation() async {
+  //   try {
+  //     final position = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: LocationAccuracy.medium,
+  //     );
+  //     setState(() {
+  //       lat = position.latitude;
+  //       lng = position.longitude;
+  //     });
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Не удалось получить геолокацию: $e")),
+  //     );
+  //   }
+  // }
 
   Future<void> _initCamera() async {
     try {
@@ -126,7 +138,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar( SnackBar(content: Text(cameraIsNotReadyYet.tr())));
+      ).showSnackBar(SnackBar(content: Text(cameraIsNotReadyYet.tr())));
       return;
     }
 
@@ -167,149 +179,131 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     );
   }
 
- Future<void> _sendData() async {
-  final pos = await _getFreshPosition();
+  Future<void> _sendData() async {
+    if (lat == null || lng == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(geo_not_determined.tr())));
+      return;
+    }
 
-
-  if (pos.accuracy > 50) {
-  setState(() => saving = false);
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Слабый GPS: точность ~${pos.accuracy.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.')),
-  );
-  return;
-  
-}
-
-  if (priceUnitController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(enterPrice.tr())),
-    );
-    return;
-  }
-
-  if (_photoProduct == null || _photoPrice == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Нужно сделать 2 фото: товар и ценник')),
-    );
-    return;
-  }
-
-  if (lat == null || lng == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(geo_not_determined.tr())),
-    );
-    return;
-  }
-
-  setState(() => saving = true);
-
-  try {
-    final token = await Config.getToken();
-    if (token == null || token.isEmpty) {
-      setState(() => saving = false);
+    if (accuracy != null && accuracy! > 80) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Токен не найден. Авторизуйтесь заново.')),
+        SnackBar(
+          content: Text(
+            'Слабый GPS: точность ~${accuracy!.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.',
+          ),
+        ),
       );
       return;
     }
 
-    final uri = Uri.parse("$QYZ_API_BASE/taskDetail/update");
-    final request = http.MultipartRequest('PUT', uri);
-
-    request.headers['Authorization'] = 'Bearer $token';
- 
-    request.fields['TaskDetailId'] = widget.taskDetailId;
-    request.fields['GoodId'] = widget.goodId;
-    request.fields['PriceUnit'] =
-        priceUnitController.text.trim().replaceAll(',', '.');
-String toCommaCoord(double v) => v.toStringAsFixed(6).replaceAll('.', ',');
-request.fields['Lng'] = toCommaCoord(lng!);
-request.fields['Lat'] = toCommaCoord(lat!);
-
-
-
-    if (kIsWeb) {
-      final productBytes = await _photoProduct!.readAsBytes();
-      final priceBytes = await _photoPrice!.readAsBytes();
-      
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'PhotoProduct',
-          productBytes,
-          filename: _photoProduct!.name.endsWith('.jpg')
-              ? _photoProduct!.name
-              : '${_photoProduct!.name}.jpg',
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'PhotoPrice',
-          priceBytes,
-          filename: _photoPrice!.name.endsWith('.jpg')
-              ? _photoPrice!.name
-              : '${_photoPrice!.name}.jpg',
-          contentType: MediaType('image', 'jpeg'),
-        ),
-      );
-    } else {
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'PhotoProduct',
-          _photoProduct!.path,
-        ),
-      );
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'PhotoPrice',
-          _photoPrice!.path,
-        ),
-      );
+    if (priceUnitController.text.trim().isEmpty) {
+      setState(() => priceError = true);
+      return;
     }
 
-    print(request.fields);
-
-    final response = await request.send();
-    
-
-    if (!mounted) return;
-    setState(() => saving = false);
-
-    if (response.statusCode == 200) {
+    if (_photoProduct == null || _photoPrice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(saved.tr())),
+        const SnackBar(content: Text('Нужно сделать 2 фото: товар и ценник')),
       );
-      Navigator.of(context).pop(true);
-    } else {
-      final body = await response.stream.bytesToString();
-      debugPrint('update taskDetail error: ${response.statusCode} $body');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${errorWhileSavingTheProduct.tr()} (${response.statusCode})',
+      return;
+    }
+
+    if (lat == null || lng == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(geo_not_determined.tr())));
+      return;
+    }
+
+    setState(() => saving = true);
+
+    try {
+      String toCommaCoord(double v) =>
+          v.toStringAsFixed(6).replaceAll('.', ',');
+
+      final fields = <String, String>{
+        'TaskDetailId': widget.taskDetailId,
+        'GoodId': widget.goodId,
+        'PriceUnit': priceUnitController.text.trim().replaceAll(',', '.'),
+        'Lng': toCommaCoord(lng!),
+        'Lat': toCommaCoord(lat!),
+      };
+
+      final files = <http.MultipartFile>[];
+
+      if (kIsWeb) {
+        files.add(
+          http.MultipartFile.fromBytes(
+            'PhotoProduct',
+            await _photoProduct!.readAsBytes(),
+            filename: '${_photoProduct!.name}.jpg',
+            contentType: MediaType('image', 'jpeg'),
           ),
-        ),
-      );
-    }
-  } catch (e) {
-    debugPrint('sendData exception: $e');
-    if (!mounted) return;
-    setState(() => saving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(geolocationOrNetworkError.tr())),
-    );
-  }
-}
+        );
+        files.add(
+          http.MultipartFile.fromBytes(
+            'PhotoPrice',
+            await _photoPrice!.readAsBytes(),
+            filename: '${_photoPrice!.name}.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          ),
+        );
+      } else {
+        files.add(
+          await http.MultipartFile.fromPath(
+            'PhotoProduct',
+            _photoProduct!.path,
+          ),
+        );
+        files.add(
+          await http.MultipartFile.fromPath('PhotoPrice', _photoPrice!.path),
+        );
+      }
 
+      final response = await ApiClient.multipartPut(
+        '/taskDetail/update',
+        fields,
+        files,
+        context,
+      );
+
+      if (!mounted) return;
+      setState(() => saving = false);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(saved.tr())));
+        Navigator.of(context).pop(true);
+      } else {
+        final body = await response.stream.bytesToString();
+        debugPrint('update taskDetail error: ${response.statusCode} $body');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${errorWhileSavingTheProduct.tr()} (${response.statusCode})',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('sendData exception: $e');
+      if (!mounted) return;
+      setState(() => saving = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(geolocationOrNetworkError.tr())));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title:  Text(product_do.tr()),
+        title: Text(product_do.tr()),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -323,7 +317,17 @@ request.fields['Lat'] = toCommaCoord(lat!);
         ),
       ),
       body: loadingLocation
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  const SizedBox(height: 12),
+                  Text(wereGettingYourLocation.tr()),
+                ],
+              ),
+            )
           : SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(12),
@@ -411,61 +415,66 @@ request.fields['Lat'] = toCommaCoord(lat!);
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
+                              onChanged: (_) {
+                                if (priceError) {
+                                  setState(() => priceError = false);
+                                }
+                              },
                               decoration: InputDecoration(
                                 labelText: price.tr(),
-                                prefixIcon: Icon(Icons.wallet),
-                                border: OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.wallet),
+                                border: const OutlineInputBorder(),
+                                errorText: priceError ? enterPrice.tr() : null,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on_rounded,
-                                  size: 20,
-                                  color: lat != null
-                                      ? Colors.green
-                                      : Colors.redAccent,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Lat: ${lat ?? noData.tr()}",
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      Text(
-                                        "Lng: ${lng ?? noData.tr()}",
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                ElevatedButton.icon(
-                                  onPressed: _updateLocation,
-                                  icon: const Icon(
-                                    Icons.refresh_rounded,
-                                    size: 18,
-                                  ),
-                                  label: const Text(
-                                    "Гео",
-                                    style: TextStyle(fontSize: 13),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                            // Row(
+                            //   children: [
+                            //     Icon(
+                            //       Icons.location_on_rounded,
+                            //       size: 20,
+                            //       color: lat != null
+                            //           ? Colors.green
+                            //           : Colors.redAccent,
+                            //     ),
+                            //     const SizedBox(width: 6),
+                            //     Expanded(
+                            //       child: Column(
+                            //         crossAxisAlignment:
+                            //             CrossAxisAlignment.start,
+                            //         children: [
+                            //           Text(
+                            //             "Lat: ${lat ?? noData.tr()}",
+                            //             style: const TextStyle(fontSize: 13),
+                            //           ),
+                            //           Text(
+                            //             "Lng: ${lng ?? noData.tr()}",
+                            //             style: const TextStyle(fontSize: 13),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
+                            //     ElevatedButton.icon(
+                            //       onPressed: _updateLocation,
+                            //       icon: const Icon(
+                            //         Icons.refresh_rounded,
+                            //         size: 18,
+                            //       ),
+                            //       label: const Text(
+                            //         "Гео",
+                            //         style: TextStyle(fontSize: 13),
+                            //       ),
+                            //       style: ElevatedButton.styleFrom(
+                            //         padding: const EdgeInsets.symmetric(
+                            //           horizontal: 10,
+                            //           vertical: 8,
+                            //         ),
+                            //         shape: RoundedRectangleBorder(
+                            //           borderRadius: BorderRadius.circular(20),
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
                           ],
                         ),
                       ),
@@ -485,7 +494,7 @@ request.fields['Lat'] = toCommaCoord(lat!);
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                               fix.tr(),
+                              fix.tr(),
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
@@ -499,93 +508,110 @@ request.fields['Lat'] = toCommaCoord(lat!);
                                 color: Colors.grey[700],
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              height: 190,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        Expanded(
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            child: _buildPhotoPreview(
-                                              _photoProduct,
-                                              product_photo.tr(),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        ElevatedButton.icon(
-                                          onPressed: () =>
-                                              _takePhoto(isProduct: true),
-                                          icon: const Icon(
-                                            Icons.camera_alt_rounded,
-                                          ),
-                                          label: Text(
-                                            takeAPicture.tr(),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blue[300],
-                                            foregroundColor: Colors.white,
-                                            minimumSize: const Size.fromHeight(
-                                              40,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(18),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                            if (!showCameraSection) ...[
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      showCameraSection = true;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.camera_alt_rounded),
+                                  label: Text(openCamera.tr()),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        Expanded(
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            child: _buildPhotoPreview(
-                                              _photoPrice,
-                                              price_tag.tr(),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        ElevatedButton.icon(
-                                          onPressed: () =>
-                                              _takePhoto(isProduct: false),
-                                          icon: const Icon(
-                                            Icons.camera_alt_rounded,
-                                          ),
-                                          label: Text(
-                                            takeAPicture.tr(),
-                                          ),
-                                          style: ElevatedButton.styleFrom(
-                                            foregroundColor: Colors.white,
-                                            backgroundColor: Colors.blue[300],
-                                            minimumSize: const Size.fromHeight(
-                                              40,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(18),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
+                            if (showCameraSection) ...[
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: 190,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child: _buildPhotoPreview(
+                                                _photoProduct,
+                                                product_photo.tr(),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          ElevatedButton.icon(
+                                            onPressed: () =>
+                                                _takePhoto(isProduct: true),
+                                            icon: const Icon(
+                                              Icons.camera_alt_rounded,
+                                            ),
+                                            label: Text(takeAPicture.tr()),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue[300],
+                                              foregroundColor: Colors.white,
+                                              minimumSize:
+                                                  const Size.fromHeight(40),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(18),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              child: _buildPhotoPreview(
+                                                _photoPrice,
+                                                price_tag.tr(),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          ElevatedButton.icon(
+                                            onPressed: () =>
+                                                _takePhoto(isProduct: false),
+                                            icon: const Icon(
+                                              Icons.camera_alt_rounded,
+                                            ),
+                                            label: Text(takeAPicture.tr()),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue[300],
+                                              foregroundColor: Colors.white,
+                                              minimumSize:
+                                                  const Size.fromHeight(40),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(18),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),

@@ -191,5 +191,8 @@
     "allowedDistance":"Допустимое расстояние",
     "task":"Задача",
     "newMarket":"Новый маркет",
-    "fillInTheMarketDetails":"Заполните данные о маркете"
+    "fillInTheMarketDetails":"Заполните данные о маркете",
+    "Search":"Поиск",
+    "openCamera":"Открыть камеру",
+    "wereGettingYourLocation":"Получаем вашу геолокацию, оставайтесь на странице..."
 }

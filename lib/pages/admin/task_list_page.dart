@@ -4,12 +4,10 @@ import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-
-import 'package:price_book/drawer.dart';
+import 'package:price_book/api_client.dart';
+import 'package:price_book/pages/widgets/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/admin/task_details_page.dart';
-import '../../config.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
@@ -85,19 +83,7 @@ class _TaskListPageState extends State<TaskListPage> {
     setState(() => loading = true);
 
     try {
-      final headers = await Config.authorizedJsonHeaders();
-
-      if (!headers.containsKey('Authorization')) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(token_not_found.tr())));
-        return;
-      }
-
-      final res = await http.get(
-        Uri.parse("$QYZ_API_BASE/task"),
-        headers: headers,
-      );
+      final res = await ApiClient.get('/task', context);
 
       if (res.statusCode == 200) {
         setState(() {
@@ -156,19 +142,10 @@ class _TaskListPageState extends State<TaskListPage> {
         if (pos != null) "lng": pos.longitude,
       };
 
-      final headers = await Config.authorizedJsonHeaders();
-
-      if (!headers.containsKey('Authorization')) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(token_not_found.tr())));
-        return;
-      }
-
-      final response = await http.put(
-        Uri.parse("$QYZ_API_BASE/task/$taskId"),
-        headers: headers,
-        body: jsonEncode(body),
+      final response = await ApiClient.put(
+        '/task/$taskId',
+        context,
+        body,
       );
 
       if (response.statusCode == 200) {

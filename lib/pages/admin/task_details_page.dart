@@ -2,9 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:http/http.dart' as http;
-
-import '../../config.dart';
+import 'package:price_book/api_client.dart';
 import '../../keys.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
@@ -36,27 +34,18 @@ class TaskDetailsPage extends StatelessWidget {
     return data.toString();
   }
 
-  Future<List<Map<String, dynamic>>> fetchTask() async {
-    final headers = await Config.authorizedJsonHeaders();
-
-    if (!headers.containsKey('Authorization')) {
-      throw Exception('Токен не найден. Авторизуйтесь заново.');
-    }
-
-    final response = await http.get(
-      Uri.parse("$QYZ_API_BASE/task/$taskId"),
-      headers: headers,
-    );
+  Future<List<Map<String, dynamic>>> fetchTask(BuildContext context) async {
+    final response = await ApiClient.get('/task/$taskId', context);
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-
+      print(decoded);
       if (decoded is List) {
         return decoded
             .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
             .toList();
       } else if (decoded is Map<String, dynamic>) {
-        return [decoded];
+        return [Map<String, dynamic>.from(decoded)];
       } else {
         throw Exception('Неожиданный формат ответа');
       }
@@ -82,7 +71,7 @@ class TaskDetailsPage extends StatelessWidget {
         elevation: 0,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchTask(),
+        future: fetchTask(context),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -240,7 +229,6 @@ class TaskDetailsPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-
                         if (goods.isEmpty)
                           Text(
                             noData.tr(),

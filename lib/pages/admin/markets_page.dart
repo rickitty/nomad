@@ -1,8 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:price_book/config.dart';
-import 'package:price_book/drawer.dart';
+import 'package:price_book/api_client.dart';
+import 'package:price_book/pages/widgets/drawer.dart';
 import 'dart:convert';
 
 import '../../keys.dart';
@@ -20,23 +19,14 @@ class MarketsPage extends StatefulWidget {
 class _MarketsPageState extends State<MarketsPage> {
   List markets = [];
   bool loading = true;
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = '';
 
   Future<void> loadMarkets() async {
     setState(() => loading = true);
 
     try {
-      final headers = await Config.authorizedJsonHeaders();
-
-      if (!headers.containsKey('Authorization')) {
-        print("Токен не найден. Авторизуйтесь заново.");
-        markets = [];
-        return;
-      }
-
-      final response = await http.get(
-        Uri.parse("$QYZ_API_BASE/markets"),
-        headers: headers,
-      );
+      final response = await ApiClient.get('/markets', context);
 
       if (response.statusCode == 200) {
         markets = json.decode(utf8.decode(response.bodyBytes));
@@ -62,8 +52,25 @@ class _MarketsPageState extends State<MarketsPage> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final filteredMarkets = markets.where((m) {
+      if (searchQuery.isEmpty) return true;
+
+      final name = (m["name"] ?? "").toString().toLowerCase();
+      final address = (m["address"] ?? "").toString().toLowerCase();
+      final type = (m["type"] ?? "").toString().toLowerCase();
+
+      return name.contains(searchQuery) ||
+          address.contains(searchQuery) ||
+          type.contains(searchQuery);
+    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F9FF),
@@ -101,20 +108,48 @@ class _MarketsPageState extends State<MarketsPage> {
             )
           : markets.isEmpty
           ? _buildEmptyState(textTheme)
-          : RefreshIndicator(
-              onRefresh: loadMarkets,
-              color: kPrimaryColor,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 16,
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: search.tr(),
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchQuery = value.toLowerCase().trim();
+                      });
+                    },
+                  ),
                 ),
-                itemCount: markets.length,
-                itemBuilder: (context, index) {
-                  final m = markets[index];
-                  return _MarketCard(market: m);
-                },
-              ),
+
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: loadMarkets,
+                    color: kPrimaryColor,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      itemCount: filteredMarkets.length,
+                      itemBuilder: (context, index) {
+                        final m = filteredMarkets[index];
+                        return _MarketCard(market: m);
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -166,7 +201,7 @@ class _MarketCard extends StatelessWidget {
     final address = (market["address"] ?? "").toString();
     final type = (market["type"] ?? "").toString();
     final workHours = (market["workHours"] ?? "").toString();
-    final allowedD=(market["geoAccuracy"]?? "").toString();
+    final allowedD = (market["geoAccuracy"] ?? "").toString();
     // final id = (market["id"] ?? market["_id"] ?? "").toString();
 
     return Card(
@@ -295,7 +330,7 @@ class _MarketCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text("${allowedDistance.tr()}: $allowedD")
+                    Text("${allowedDistance.tr()}: $allowedD"),
                   ],
                 ),
               ),

@@ -1,9 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:price_book/api_client.dart';
 import 'dart:convert';
-
-import 'package:price_book/config.dart';
 import 'package:price_book/keys.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
@@ -40,23 +38,6 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
   Future<void> createMarket() async {
     setState(() => loading = true);
 
-    if (QYZ_API_BASE.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Ошибка: базовый URL не задан")),
-      );
-      setState(() => loading = false);
-      return;
-    }
-
-    final token = await Config.getToken();
-    if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Ошибка: токен не задан")));
-      setState(() => loading = false);
-      return;
-    }
-
     final Map<String, dynamic> body = {
       "name": _name.text,
       "address": _address.text,
@@ -69,30 +50,11 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
       "workHours": _workHours.text,
     };
 
-    final uri = Uri.parse("$QYZ_API_BASE/market/create");
-    final headers = <String, String>{
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    };
-    final jsonBody = jsonEncode(body);
-
-    print(jsonBody);
     print("=== CREATE MARKET REQUEST ===");
-    print("URL: $uri");
-    print("HEADERS: $headers");
-    print("BODY: $jsonBody");
-
-    final curl =
-        """
-curl -X POST '$uri' \\
-  -H 'Content-Type: application/json' \\
-  -H 'Authorization: Bearer $token' \\
-  -d '$jsonBody'
-""";
-    print("CURL:\n$curl");
+    print(jsonEncode(body));
 
     try {
-      final response = await http.post(uri, headers: headers, body: jsonBody);
+      final response = await ApiClient.post('/market/create', body, context);
 
       final bodyStr = utf8.decode(response.bodyBytes);
 
@@ -114,9 +76,9 @@ curl -X POST '$uri' \\
           context,
         ).showSnackBar(SnackBar(content: Text(succsessfulCreateMarket.tr())));
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Ошибка: ${data ?? bodyStr}")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${error.tr()}: ${data ?? bodyStr}")),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(

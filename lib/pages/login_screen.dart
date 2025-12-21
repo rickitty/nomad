@@ -6,10 +6,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:price_book/keys.dart';
+import 'package:price_book/pages/worker/worker_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../config.dart';
-import './home_page.dart';
 import 'widgets/phone_step.dart';
 import 'widgets/otp_step.dart';
 
@@ -293,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
+      MaterialPageRoute(builder: (_) => const WorkerPage()),
     );
   } catch (e, st) {
     print("Login exception: $e\n$st");

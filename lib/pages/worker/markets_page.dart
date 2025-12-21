@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:http/http.dart' as http;
+import 'package:price_book/api_client.dart';
 import 'package:price_book/keys.dart';
-import '../../config.dart';
 import 'products_page.dart';
 
 class WorkerTaskObjectsPage extends StatefulWidget {
@@ -26,44 +25,29 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
   }
 
   Future<void> fetchTaskObjects() async {
-  setState(() => loading = true);
+    setState(() => loading = true);
 
-  try {
-    final headers = await Config.authorizedJsonHeaders();
+    try {
+      final response = await ApiClient.get('/task/${widget.taskId}', context);
 
-    if (!headers.containsKey('Authorization')) {
+      if (response.statusCode == 200) {
+        final List<dynamic> res = jsonDecode(response.body);
+        setState(() {
+          taskObjects = res.isNotEmpty ? res.cast<Map<String, dynamic>>() : [];
+          loading = false;
+          error = false;
+        });
+      } else {
+        throw Exception("${errorLoading.tr()}: ${response.body}");
+      }
+    } catch (e) {
       setState(() {
         loading = false;
         error = true;
       });
-      debugPrint("fetchTaskObjects: token not found");
-      return;
+      debugPrint("fetchTaskObjects exception: $e");
     }
-
-    final response = await http.get(
-      Uri.parse("$QYZ_API_BASE/task/${widget.taskId}"),
-      headers: headers,
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> res = jsonDecode(response.body);
-      setState(() {
-        taskObjects = res.isNotEmpty ? res.cast<Map<String, dynamic>>() : [];
-        loading = false;
-        error = false;
-      });
-    } else {
-      throw Exception("${errorLoading.tr()}: ${response.body}");
-    }
-  } catch (e) {
-    setState(() {
-      loading = false;
-      error = true;
-    });
-    debugPrint("fetchTaskObjects exception: $e");
   }
-}
-
 
   @override
   void initState() {
@@ -77,7 +61,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title:  Text(taskDetails.tr()),
+        title: Text(taskDetails.tr()),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -126,7 +110,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                         TextButton.icon(
                           onPressed: fetchTaskObjects,
                           icon: const Icon(Icons.refresh_rounded),
-                          label:  Text(confirm.tr(),)
+                          label: Text(confirm.tr()),
                         ),
                       ],
                     ),
@@ -210,6 +194,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                 const SizedBox(height: 10),
                             itemBuilder: (context, index) {
                               final task = taskObjects[index];
+                              final status = task["status"]?.toString() ?? "";
                               final marketId =
                                   task["marketId"]?.toString() ?? "";
                               final completedAt =
@@ -294,7 +279,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                       fontSize: 16,
                                                     ),
                                                   ),
-                                                  if (completedAt.isNotEmpty)
+                                                  if (status == "Completed")
                                                     Padding(
                                                       padding:
                                                           const EdgeInsets.only(
@@ -356,7 +341,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
 
                                         const SizedBox(height: 8),
 
-                                         Text(
+                                        Text(
                                           productK.tr(),
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
@@ -458,9 +443,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                               Icons.arrow_forward_ios,
                                               size: 16,
                                             ),
-                                            label: Text(
-                                              ktavaram.tr(),
-                                            ),
+                                            label: Text(ktavaram.tr()),
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.blue[300],
                                               foregroundColor: Colors.white,

@@ -191,5 +191,8 @@
     "allowedDistance":"Allowed distance",
     "task":"Task",
     "newMarket":"New market",
-    "fillInTheMarketDetails":"Fill in the market details"
+    "fillInTheMarketDetails":"Fill in the market details",
+    "Search":"Search",
+    "openCamera":"Open camera",
+    "wereGettingYourLocation":"Getting your location, stay on the page..."
 }

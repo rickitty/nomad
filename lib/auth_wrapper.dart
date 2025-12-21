@@ -1,8 +1,8 @@
 // auth_wrapper.dart
 import 'package:flutter/material.dart';
+import 'package:price_book/pages/worker/worker_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/login_screen.dart';
-import 'pages/home_page.dart';
 import 'StartPage.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -10,7 +10,7 @@ class AuthWrapper extends StatelessWidget {
 
   Future<_AuthState> _loadAuthState() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final token = prefs.getString('accessToken');
     final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
     return _AuthState(token: token, seenOnboarding: seenOnboarding);
   }
@@ -31,8 +31,7 @@ class AuthWrapper extends StatelessWidget {
         final seenOnboarding = state.seenOnboarding;
 
         if (token != null) {
-          // есть токен — сразу воркер
-          return const HomePage();
+          return const WorkerPage();
         }
 
         if (!seenOnboarding) {
