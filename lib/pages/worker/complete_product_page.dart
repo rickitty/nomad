@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:price_book/api_client.dart';
+import 'package:price_book/pages/widgets/fullscreenCamera.dart';
 import '../../keys.dart'; // тут должен быть baseUrl
 
 class CompleteGoodPage extends StatefulWidget {
@@ -135,48 +136,38 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   }
 
   Future<void> _takePhoto({required bool isProduct}) async {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(cameraIsNotReadyYet.tr())));
-      return;
-    }
+    final cameras = await availableCameras();
 
-    try {
-      await _initCameraFuture;
-      final file = await _cameraController!.takePicture();
+    final photo = await Navigator.push<XFile>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FullscreenCameraPage(camera: cameras.first),
+      ),
+    );
 
-      setState(() {
-        if (isProduct) {
-          _photoProduct = file;
-        } else {
-          _photoPrice = file;
-        }
-      });
-    } catch (e) {
-      debugPrint('take photo error: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorWhileFilming.tr())));
-    }
+    if (photo == null) return;
+
+    setState(() {
+      if (isProduct) {
+        _photoProduct = photo;
+      } else {
+        _photoPrice = photo;
+      }
+    });
   }
 
-  Widget _buildPhotoPreview(XFile? file, String placeholder) {
-    if (file == null) {
-      return Container(
-        height: 140,
-        color: Colors.grey.shade200,
-        child: Center(child: Text(placeholder, textAlign: TextAlign.center)),
-      );
+  Widget _buildCameraOrPhoto({required XFile? file}) {
+    if (file != null) {
+      return kIsWeb
+          ? Image.network(file.path, fit: BoxFit.cover)
+          : Image.file(File(file.path), fit: BoxFit.cover);
     }
 
-    return SizedBox(
-      height: 140,
-      child: kIsWeb
-          ? Image.network(file.path, fit: BoxFit.cover)
-          : Image.file(File(file.path), fit: BoxFit.cover),
-    );
+    if (_cameraController != null && _cameraController!.value.isInitialized) {
+      return CameraPreview(_cameraController!);
+    }
+
+    return const Center(child: CircularProgressIndicator());
   }
 
   Future<void> _sendData() async {
@@ -544,9 +535,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                             child: ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(12),
-                                              child: _buildPhotoPreview(
-                                                _photoProduct,
-                                                product_photo.tr(),
+                                              child: _buildCameraOrPhoto(
+                                                file: _photoProduct,
                                               ),
                                             ),
                                           ),
@@ -580,9 +570,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                             child: ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(12),
-                                              child: _buildPhotoPreview(
-                                                _photoPrice,
-                                                price_tag.tr(),
+                                              child: _buildCameraOrPhoto(
+                                                file: _photoPrice,
                                               ),
                                             ),
                                           ),
