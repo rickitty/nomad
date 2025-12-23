@@ -78,15 +78,8 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                 ],
                 child: Container(
                   width: double.infinity,
-                  constraints: BoxConstraints(
-                    minHeight: screenHeight * 0.40,
-                  ),
-                  padding: EdgeInsets.fromLTRB(
-                    28,
-                    32,
-                    28,
-                    32 + 24, 
-                  ),
+                  constraints: BoxConstraints(minHeight: screenHeight * 0.40),
+                  padding: EdgeInsets.fromLTRB(28, 32, 28, 32 + 24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: const BorderRadius.vertical(
@@ -104,22 +97,14 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-      
-                      Text(
-                        onboardingTagline.tr(),
-                        style: OnboardingTheme.tag,
-                      )
+                      Text(onboardingTagline.tr(), style: OnboardingTheme.tag)
                           .animate()
                           .fadeIn(duration: 350.ms, curve: Curves.easeOut)
                           .moveY(begin: 10, end: 0, duration: 300.ms),
 
                       const SizedBox(height: 8),
 
-                 
-                      Text(
-                        onboardingTitle1.tr(),
-                        style: OnboardingTheme.title,
-                      )
+                      Text(onboardingTitle1.tr(), style: OnboardingTheme.title)
                           .animate()
                           .fadeIn(delay: 80.ms, duration: 350.ms)
                           .moveY(begin: 12, end: 0, duration: 300.ms),
@@ -127,9 +112,9 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                       const SizedBox(height: 14),
 
                       Text(
-                        onboardingDescription1.tr(),
-                        style: OnboardingTheme.body,
-                      )
+                            onboardingDescription1.tr(),
+                            style: OnboardingTheme.body,
+                          )
                           .animate()
                           .fadeIn(delay: 140.ms, duration: 350.ms)
                           .moveY(begin: 14, end: 0, duration: 300.ms),
@@ -137,15 +122,15 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                       const SizedBox(height: 18),
 
                       Text(
-                        onboardingChooseLanguage.tr(),
-                        style: GoogleFonts.poppins(
-                          textStyle: const TextStyle(
-                            color: Color(0xFF444444),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      )
+                            onboardingChooseLanguage.tr(),
+                            style: GoogleFonts.notoSans(
+                              textStyle: const TextStyle(
+                                color: Color(0xFF444444),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )
                           .animate()
                           .fadeIn(delay: 200.ms, duration: 300.ms)
                           .moveY(begin: 10, end: 0, duration: 250.ms),
@@ -154,23 +139,27 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
 
                       // Чипы языков
                       Row(
-                        children: [
-                          _LanguageChip(label: "Қазақша", selected: _selectedLang== 'kz', onTap: ()=>_changeLang('kz')),
-                          const SizedBox(width: 8),
-                          
-                          _LanguageChip(
-                            label: 'Русский',
-                            selected: _selectedLang == 'ru',
-                            onTap: () => _changeLang('ru'),
-                          ),
-                          const SizedBox(width: 8),
-                          _LanguageChip(
-                            label: 'English',
-                            selected: _selectedLang == 'en',
-                            onTap: () => _changeLang('en'),
-                          ),
-                        ],
-                      )
+                            children: [
+                              _LanguageChip(
+                                label: "Қазақша",
+                                selected: _selectedLang == 'kz',
+                                onTap: () => _changeLang('kz'),
+                              ),
+                              const SizedBox(width: 8),
+
+                              _LanguageChip(
+                                label: 'Русский',
+                                selected: _selectedLang == 'ru',
+                                onTap: () => _changeLang('ru'),
+                              ),
+                              const SizedBox(width: 8),
+                              _LanguageChip(
+                                label: 'English',
+                                selected: _selectedLang == 'en',
+                                onTap: () => _changeLang('en'),
+                              ),
+                            ],
+                          )
                           .animate()
                           .fadeIn(delay: 260.ms, duration: 300.ms)
                           .moveY(begin: 8, end: 0, duration: 250.ms)
@@ -181,41 +170,40 @@ class _OnboardingPage1State extends State<OnboardingPage1> {
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton(
-                          style: OnboardingTheme.primaryButton,
-                          onPressed: () {
-                            widget.controller.nextPage(
-                              duration: const Duration(milliseconds: 400),
-                              curve: Curves.easeInOut,
-                            );
-                          },
-                          child: Text(
-                            onboardingContinue.tr(),
-                            style: GoogleFonts.poppins(
-                              textStyle: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(
-                              delay: 320.ms,
-                              duration: 500.ms,
-                              curve: Curves.easeOut,
-                            )
-                            .moveY(
-                              begin: 30,
-                              end: 0,
-                              curve: Curves.easeOut,
-                            )
-                            .scaleXY(
-                              begin: 0.9,
-                              end: 1.0,
-                              duration: 400.ms,
-                            ),
+                        child:
+                            ElevatedButton(
+                                  style: OnboardingTheme.primaryButton,
+                                  onPressed: () {
+                                    widget.controller.nextPage(
+                                      duration: const Duration(
+                                        milliseconds: 400,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  },
+                                  child: Text(
+                                    onboardingContinue.tr(),
+                                    style: GoogleFonts.notoSans(
+                                      textStyle: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .animate()
+                                .fadeIn(
+                                  delay: 320.ms,
+                                  duration: 500.ms,
+                                  curve: Curves.easeOut,
+                                )
+                                .moveY(begin: 30, end: 0, curve: Curves.easeOut)
+                                .scaleXY(
+                                  begin: 0.9,
+                                  end: 1.0,
+                                  duration: 400.ms,
+                                ),
                       ),
                     ],
                   ),
@@ -261,7 +249,7 @@ class _LanguageChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.notoSans(
             textStyle: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,

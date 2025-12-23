@@ -75,9 +75,7 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
                 child: Container(
                   width: double.infinity,
                   // Только минимальная высота — дальше блок растёт по контенту
-                  constraints: BoxConstraints(
-                    minHeight: screenHeight * 0.40,
-                  ),
+                  constraints: BoxConstraints(minHeight: screenHeight * 0.40),
                   padding: EdgeInsets.fromLTRB(
                     28,
                     32,
@@ -139,42 +137,38 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
                       SizedBox(
                         width: double.infinity,
                         height: 52,
-                        child: ElevatedButton(
-                          style: OnboardingTheme.primaryButton,
-                          onPressed: () async {
-                            await _requestCameraPermission();
-                            widget.controller.nextPage(
-                              duration: const Duration(milliseconds: 400),
-                              curve: Curves.easeInOut,
-                            );
-                          },
-                          child: Text(
-                            onboardingCameraButton.tr(),
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              textStyle: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(
-                              duration: 500.ms,
-                              curve: Curves.easeOut,
-                            )
-                            .moveY(
-                              begin: 30,
-                              end: 0,
-                              curve: Curves.easeOut,
-                            )
-                            .scaleXY(
-                              begin: 0.9,
-                              end: 1.0,
-                              duration: 400.ms,
-                            ),
+                        child:
+                            ElevatedButton(
+                                  style: OnboardingTheme.primaryButton,
+                                  onPressed: () async {
+                                    await _requestCameraPermission();
+                                    widget.controller.nextPage(
+                                      duration: const Duration(
+                                        milliseconds: 400,
+                                      ),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  },
+                                  child: Text(
+                                    onboardingCameraButton.tr(),
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.notoSans(
+                                      textStyle: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .animate()
+                                .fadeIn(duration: 500.ms, curve: Curves.easeOut)
+                                .moveY(begin: 30, end: 0, curve: Curves.easeOut)
+                                .scaleXY(
+                                  begin: 0.9,
+                                  end: 1.0,
+                                  duration: 400.ms,
+                                ),
                       ),
 
                       const SizedBox(height: 8),

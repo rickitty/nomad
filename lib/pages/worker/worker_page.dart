@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:price_book/pages/widgets/dateFilter.dart';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/pages/widgets/drawer.dart';
 import 'package:price_book/keys.dart';
+
 import 'markets_page.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
@@ -21,6 +25,51 @@ class _WorkerPageState extends State<WorkerPage> {
   bool loading = false;
   String phone = "";
 
+  // ===== Calendar filter (toggle) =====
+  DateTime? _filterDay; // null = фильтр выключен
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime safeParse(dynamic v) {
+    if (v == null) return DateTime.fromMillisecondsSinceEpoch(0);
+    try {
+      return DateTime.parse(v.toString());
+    } catch (_) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+  }
+
+  DateTime taskDate(dynamic t) {
+    // Поменяй порядок, если у тебя приоритет другой
+    return safeParse(t["createdAt"] ?? t["startTime"] ?? t["deadLine"]);
+  }
+
+  void onCalendarTap(DateTime day) {
+    setState(() {
+      if (_filterDay != null && _isSameDay(_filterDay!, day)) {
+        _filterDay = null; // нажали ту же дату второй раз — выключить
+      } else {
+        _filterDay = day; // включить
+      }
+    });
+  }
+
+  List get visibleTasks {
+    final list = List.of(tasks);
+
+    // Всегда держим новые сверху
+    list.sort((a, b) => taskDate(b).compareTo(taskDate(a)));
+
+    if (_filterDay == null) return list;
+
+    final d = _dateOnly(_filterDay!);
+    return list.where((t) => _isSameDay(_dateOnly(taskDate(t)), d)).toList();
+  }
+
+  // ===== Load (newest first) =====
   Future<void> loadAllTasks() async {
     setState(() => loading = true);
 
@@ -28,8 +77,14 @@ class _WorkerPageState extends State<WorkerPage> {
       final res = await ApiClient.get('/task', context);
 
       if (res.statusCode == 200) {
+        final List list = jsonDecode(utf8.decode(res.bodyBytes));
+
+        // новые сверху
+        list.sort((a, b) => taskDate(b).compareTo(taskDate(a)));
+
+        if (!mounted) return;
         setState(() {
-          tasks = jsonDecode(utf8.decode(res.bodyBytes));
+          tasks = list;
         });
       } else {
         ScaffoldMessenger.of(
@@ -96,6 +151,7 @@ class _WorkerPageState extends State<WorkerPage> {
     final body = {"status": 2, "lat": pos.latitude, "lng": pos.longitude};
 
     try {
+      // ignore: avoid_print
       print(body);
       final response = await ApiClient.put('/task/$taskId', context, body);
 
@@ -204,6 +260,9 @@ class _WorkerPageState extends State<WorkerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final shown = visibleTasks;
+ 
+
     return Scaffold(
       drawer: const AppDrawer(current: DrawerRoute.worker),
       appBar: AppBar(
@@ -219,7 +278,44 @@ class _WorkerPageState extends State<WorkerPage> {
             ),
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: reload.tr(),
+            onPressed: loading ? null : loadAllTasks,
+            icon: AnimatedRotation(
+              turns: loading ? 1 : 0,
+              duration: const Duration(milliseconds: 600),
+              child: const Icon(Icons.refresh_rounded),
+            ),
+          ),
+        ],
+
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(100),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade200, kPrimaryColor],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(22),
+                bottomRight: Radius.circular(22),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            child: WeekCalendarFilter(
+              selectedDay: _filterDay,
+              onDayTap: onCalendarTap,
+              selectedColor: Colors.black,
+              todayColor: const Color.fromARGB(255, 54, 95, 244),
+              pillColor: Colors.white.withOpacity(0.85),
+            ),
+          ),
+        ),
       ),
+
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -239,32 +335,10 @@ class _WorkerPageState extends State<WorkerPage> {
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          myTasks.tr(),
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          activeTask.tr(),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      tooltip: reload.tr(),
-                      onPressed: loading ? null : loadAllTasks,
-                      icon: AnimatedRotation(
-                        turns: loading ? 1 : 0,
-                        duration: const Duration(milliseconds: 600),
-                        child: const Icon(Icons.refresh_rounded),
-                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 Expanded(
                   child: AnimatedSwitcher(
@@ -301,6 +375,37 @@ class _WorkerPageState extends State<WorkerPage> {
                               ],
                             ),
                           )
+                        : shown.isEmpty
+                        ? Center(
+                            key: const ValueKey("filtered_empty"),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.event_busy_rounded,
+                                  size: 56,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "Нет задач на выбранную дату",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  "Нажми на эту дату ещё раз, чтобы отключить фильтр",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
                         : RefreshIndicator(
                             key: const ValueKey("list"),
                             onRefresh: loadAllTasks,
@@ -308,27 +413,27 @@ class _WorkerPageState extends State<WorkerPage> {
                               physics: const BouncingScrollPhysics(
                                 parent: AlwaysScrollableScrollPhysics(),
                               ),
-                              itemCount: tasks.length,
+                              itemCount: shown.length,
                               separatorBuilder: (_, __) =>
                                   const SizedBox(height: 10),
                               itemBuilder: (context, index) {
-                                final t = tasks[index];
+                                final t = shown[index];
+                                final formatter = DateFormat('dd.MM.yyyy');
 
                                 final int code = parseStatus(t["status"]);
                                 final markets = (t["markets"] as List?) ?? [];
 
-                                final start =
-                                    t["startTime"]
-                                        ?.toString()
-                                        .split("T")
-                                        .first ??
-                                    "";
-                                final end =
-                                    t["deadLine"]
-                                        ?.toString()
-                                        .split("T")
-                                        .first ??
-                                    "";
+                                final start = t["startTime"] != null
+                                    ? formatter.format(
+                                        DateTime.parse(t["startTime"]),
+                                      )
+                                    : "";
+
+                                final end = t["deadLine"] != null
+                                    ? formatter.format(
+                                        DateTime.parse(t["deadLine"]),
+                                      )
+                                    : "";
 
                                 return TweenAnimationBuilder<double>(
                                   tween: Tween(begin: 0, end: 1),
@@ -377,7 +482,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      "${tasksK.tr()} : ${index + 1}/${tasks.length}",
+                                                      "${tasksK.tr()} : ${index + 1}/${shown.length}",
                                                       style: const TextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
@@ -399,7 +504,6 @@ class _WorkerPageState extends State<WorkerPage> {
                                             ],
                                           ),
                                           const SizedBox(height: 10),
-
                                           Row(
                                             children: [
                                               const Icon(
@@ -433,9 +537,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                               ),
                                             ],
                                           ),
-
                                           const SizedBox(height: 10),
-
                                           if (markets.isNotEmpty)
                                             Container(
                                               decoration: BoxDecoration(
@@ -538,9 +640,7 @@ class _WorkerPageState extends State<WorkerPage> {
                                                 ),
                                               ),
                                             ),
-
                                           const SizedBox(height: 12),
-
                                           Align(
                                             alignment: Alignment.centerRight,
                                             child: SizedBox(

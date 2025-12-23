@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/admin/markets_page.dart';
 import 'package:price_book/pages/admin/task_create_page.dart';
-import 'package:price_book/pages/admin/task_list_page.dart';
+// import 'package:price_book/pages/admin/task_list_page.dart';
 import 'package:price_book/pages/login_screen.dart';
 import 'package:price_book/pages/worker/worker_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -147,20 +147,20 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
 
-                  _DrawerItem(
-                    icon: Icons.edit,
-                    title: statusSidebar.tr(),
-                    onTap: () {
-                      Navigator.pop(context);
-                      if (current == DrawerRoute.taskList) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TaskListPage()),
-                      );
-                    },
-                  ),
+                  // _DrawerItem(
+                  //   icon: Icons.edit,
+                  //   title: statusSidebar.tr(),
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     if (current == DrawerRoute.taskList) return;
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(builder: (_) => const TaskListPage()),
+                  //     );
+                  //   },
+                  // ),
 
-                  const Divider(height: 24, indent: 16, endIndent: 16),
+                  // const Divider(height: 24, indent: 16, endIndent: 16),
 
                   // _DrawerItem(
                   //   icon: Icons.person,

@@ -357,7 +357,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                      
                                       fontSize: 16,
                                     ),
                                   ),
@@ -368,6 +368,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 14,
+                                      fontWeight: FontWeight.bold,
                                       color: Colors.grey[800],
                                     ),
                                   ),
@@ -626,7 +627,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                             : const Icon(Icons.check_rounded),
                         label: Text(saving ? saveWdots.tr() : confirm.tr()),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade200,
+                          backgroundColor: Colors.blue[300],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           textStyle: const TextStyle(
