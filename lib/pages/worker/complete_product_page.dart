@@ -9,7 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/pages/widgets/fullscreenCamera.dart';
-import '../../keys.dart'; // тут должен быть baseUrl
+import '../../keys.dart'; 
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class CompleteGoodPage extends StatefulWidget {
   final String taskDetailId;
@@ -170,6 +171,41 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     return const Center(child: CircularProgressIndicator());
   }
 
+
+  Future<http.MultipartFile> _compressAndConvert(XFile xfile, String fieldName) async {
+    if (kIsWeb) {
+      return http.MultipartFile.fromBytes(
+        fieldName,
+        await xfile.readAsBytes(),
+        filename: '${xfile.name}.jpg',
+        contentType: MediaType('image', 'jpeg'),
+      );
+    }
+
+    final inputPath = xfile.path;
+    final fileName = (xfile.name.isNotEmpty) ? xfile.name : inputPath.split('/').last;
+
+    final outPath =
+        '${Directory.systemTemp.path}/compressed_${DateTime.now().millisecondsSinceEpoch}_$fileName';
+
+    final compressed = await FlutterImageCompress.compressAndGetFile(
+      inputPath,
+      outPath,
+      quality: 50, 
+      format: CompressFormat.jpeg,
+    );
+
+    final pathToSend = compressed?.path ?? inputPath;
+
+    return http.MultipartFile.fromPath(
+      fieldName,
+      pathToSend,
+      filename: fileName,
+      contentType: MediaType('image', 'jpeg'),
+    );
+  }
+
+
   Future<void> _sendData() async {
     if (lat == null || lng == null) {
       ScaffoldMessenger.of(
@@ -242,15 +278,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
           ),
         );
       } else {
-        files.add(
-          await http.MultipartFile.fromPath(
-            'PhotoProduct',
-            _photoProduct!.path,
-          ),
-        );
-        files.add(
-          await http.MultipartFile.fromPath('PhotoPrice', _photoPrice!.path),
-        );
+        files.add(await _compressAndConvert(_photoProduct!, 'PhotoProduct'));
+        files.add(await _compressAndConvert(_photoPrice!, 'PhotoPrice'));
       }
 
       final response = await ApiClient.multipartPut(

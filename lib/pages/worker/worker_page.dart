@@ -60,7 +60,6 @@ class _WorkerPageState extends State<WorkerPage> {
   List get visibleTasks {
     final list = List.of(tasks);
 
-    // Всегда держим новые сверху
     list.sort((a, b) => taskDate(b).compareTo(taskDate(a)));
 
     if (_filterDay == null) return list;
@@ -69,7 +68,6 @@ class _WorkerPageState extends State<WorkerPage> {
     return list.where((t) => _isSameDay(_dateOnly(taskDate(t)), d)).toList();
   }
 
-  // ===== Load (newest first) =====
   Future<void> loadAllTasks() async {
     setState(() => loading = true);
 
@@ -79,7 +77,6 @@ class _WorkerPageState extends State<WorkerPage> {
       if (res.statusCode == 200) {
         final List list = jsonDecode(utf8.decode(res.bodyBytes));
 
-        // новые сверху
         list.sort((a, b) => taskDate(b).compareTo(taskDate(a)));
 
         if (!mounted) return;
@@ -135,7 +132,6 @@ class _WorkerPageState extends State<WorkerPage> {
   }
 
   Future<bool> autoChangeStatus(String taskId, int currentStatus) async {
-    // Для всех, кроме "Assigned"(1), просто открываем
     if (currentStatus != 1) return true;
 
     Position pos;
@@ -151,7 +147,6 @@ class _WorkerPageState extends State<WorkerPage> {
     final body = {"status": 2, "lat": pos.latitude, "lng": pos.longitude};
 
     try {
-      // ignore: avoid_print
       print(body);
       final response = await ApiClient.put('/task/$taskId', context, body);
 
@@ -279,7 +274,6 @@ class _WorkerPageState extends State<WorkerPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => loadAllTasks());
   }
 
-  // Приводим статус из API к int-коду
   int parseStatus(dynamic rawStatus) {
     if (rawStatus is int) return rawStatus;
 

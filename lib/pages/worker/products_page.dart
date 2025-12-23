@@ -7,6 +7,7 @@ import '../../keys.dart';
 class WorkerObjectProductsPage extends StatelessWidget {
   final List<Map<String, dynamic>> taskObjects;
   final String objectId;
+  
 
   const WorkerObjectProductsPage({
     super.key,
@@ -276,6 +277,7 @@ class WorkerObjectProductsPage extends StatelessWidget {
                                                       goodId: good["goodId"],
                                                       marketName: marketName,
                                                       productName: productName,
+                                                    
                                                     ),
                                               ),
                                             );
