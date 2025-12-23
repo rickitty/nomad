@@ -179,6 +179,100 @@ class _WorkerPageState extends State<WorkerPage> {
     }
   }
 
+  Future<void> _updateTaskStatus(String taskId, int newStatus) async {
+    try {
+      final pos =
+          await _getPosition(); // можно отправлять координаты, как в autoChangeStatus
+
+      final body = <String, dynamic>{
+        "status": newStatus,
+        if (pos != null) "lat": pos.latitude,
+        if (pos != null) "lng": pos.longitude,
+      };
+
+      final response = await ApiClient.put('/task/$taskId', context, body);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(status_updated.tr())));
+        await loadAllTasks();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${error.tr()}: ${response.body}")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
+    }
+  }
+
+  void _showStatusDialog(String taskId, int currentStatus) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        int selected = currentStatus;
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            ChangeStatus.tr(),
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          content: StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return DropdownButtonFormField<int>(
+                value: selected,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                ),
+                items: taskStatusKeys.entries.map((e) {
+                  return DropdownMenuItem(
+                    value: e.key,
+                    child: Text("${e.key} - ${e.value.tr()}"),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setStateDialog(() => selected = value);
+                },
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(cancel.tr()),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _updateTaskStatus(taskId, selected);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(save.tr()),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -238,21 +332,24 @@ class _WorkerPageState extends State<WorkerPage> {
     }
   }
 
-  Widget buildStatusBadge(int code) {
+  Widget buildStatusBadge(int code, String taskId) {
     final color = statusColor(code);
     final label = statusText(code);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: () => _showStatusDialog(taskId, code), // ручная смена
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -261,7 +358,6 @@ class _WorkerPageState extends State<WorkerPage> {
   @override
   Widget build(BuildContext context) {
     final shown = visibleTasks;
- 
 
     return Scaffold(
       drawer: const AppDrawer(current: DrawerRoute.worker),
@@ -333,9 +429,7 @@ class _WorkerPageState extends State<WorkerPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                    ),
+                    Column(crossAxisAlignment: CrossAxisAlignment.start),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -500,7 +594,10 @@ class _WorkerPageState extends State<WorkerPage> {
                                                   ],
                                                 ),
                                               ),
-                                              buildStatusBadge(code),
+                                              buildStatusBadge(
+                                                code,
+                                                t["id"].toString(),
+                                              ),
                                             ],
                                           ),
                                           const SizedBox(height: 10),

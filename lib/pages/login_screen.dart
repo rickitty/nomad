@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/worker/worker_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../config.dart';
 import 'widgets/phone_step.dart';
@@ -226,82 +225,87 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithCode() async {
-  final smsCode = _otpControllers.map((c) => c.text).join();
-  final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final smsCode = _otpControllers.map((c) => c.text).join();
+    final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
 
-  if (smsCode.length != 4) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(enter6DigitCode.tr())));
-    return;
-  }
-
-  if (rawPhone.length != 11) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(enterNumDiscription.tr())));
-    return;
-  }
-
-  try {
-    final uri = Uri.parse(
-      "https://qyzylorda-idm-test.curs.kz/api/v1/user/login/phone",
-    );
-
-    final body = jsonEncode({"login": rawPhone, "code": smsCode});
-
-    print("LOGIN REQUEST: $body");
-
-    final response = await http.post(
-      uri,
-      headers: {"Content-Type": "application/json"},
-      body: body,
-    );
-
-    print("LOGIN STATUS: ${response.statusCode}");
-    print("LOGIN BODY RAW: ${response.body}");
-
-    if (response.statusCode != 200) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(response.body)));
+    if (smsCode.length != 4) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(enter6DigitCode.tr())));
       return;
     }
 
-    final data = jsonDecode(response.body);
-    print("LOGIN JSON PARSED: $data");
+    if (rawPhone.length != 11) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(enterNumDiscription.tr())));
+      return;
+    }
 
-    final accessToken = data["accessToken"] as String? ?? "";
-    final refreshToken = data["refreshToken"] as String? ?? "";
-
-    print("PARSED accessToken: $accessToken");
-    print("PARSED refreshToken: $refreshToken");
-
-    if (accessToken.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Сервер не вернул accessToken. Проверьте ответ /login."),
-        ),
+    try {
+      final uri = Uri.parse(
+        "https://qyzylorda-idm-test.curs.kz/api/v1/user/login/phone",
       );
-      return;
+
+      final body = jsonEncode({"login": rawPhone, "code": smsCode});
+
+      print("LOGIN REQUEST: $body");
+
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      print("LOGIN STATUS: ${response.statusCode}");
+      print("LOGIN BODY RAW: ${response.body}");
+
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(response.body)));
+        return;
+      }
+
+      final data = jsonDecode(response.body);
+      print("LOGIN JSON PARSED: $data");
+
+      final accessToken = data["accessToken"] as String? ?? "";
+      final refreshToken = data["refreshToken"] as String? ?? "";
+
+      print("PARSED accessToken: $accessToken");
+      print("PARSED refreshToken: $refreshToken");
+
+      if (accessToken.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Сервер не вернул accessToken. Проверьте ответ /login.",
+            ),
+          ),
+        );
+        return;
+      }
+
+      await Config.saveAuthData(
+        token: accessToken,
+        refreshToken: refreshToken,
+        phone: rawPhone,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const WorkerPage()),
+      );
+    } catch (e, st) {
+      print("Login exception: $e\n$st");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Ошибка при логине: $e")));
     }
-
-    await Config.saveAuthData(
-      token: accessToken,         
-      refreshToken: refreshToken,
-      phone: rawPhone,
-    );
-
-    if (!mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const WorkerPage()),
-    );
-  } catch (e, st) {
-    print("Login exception: $e\n$st");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Ошибка при логине: $e")),
-    );
   }
-}
 
   String getGreeting() {
     final hour = DateTime.now().hour;

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/keys.dart';
 import 'products_page.dart';
@@ -46,6 +48,69 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
         error = true;
       });
       debugPrint("fetchTaskObjects exception: $e");
+    }
+  }
+
+  Future<Position?> _getPosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return null;
+    }
+    if (permission == LocationPermission.deniedForever) return null;
+
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.medium,
+      distanceFilter: 0,
+      timeLimit: Duration(seconds: 15),
+    );
+
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: locationSettings,
+      );
+    } on TimeoutException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> updateTaskDetailStatus(
+    String taskDetailId,
+    int newStatus,
+  ) async {
+    try {
+      final pos = await _getPosition();
+
+      final body = <String, dynamic>{
+        "status": newStatus,
+        if (pos != null) "lat": pos.latitude,
+        if (pos != null) "lng": pos.longitude,
+      };
+
+      final responce = await ApiClient.put(
+        '/task/detail/$taskDetailId',
+        context,
+        body,
+      );
+      if (responce.statusCode == 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(status_updated.tr())));
+        fetchTaskObjects();
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: ${responce.body}")));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -438,6 +503,12 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                       ),
                                                 ),
                                               );
+                                              if (status == "Assigned") {
+                                                updateTaskDetailStatus(
+                                                  widget.taskId,
+                                                  2,
+                                                );
+                                              }
                                             },
                                             icon: const Icon(
                                               Icons.arrow_forward_ios,
