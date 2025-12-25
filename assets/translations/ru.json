@@ -195,5 +195,22 @@
     "fillInTheMarketDetails":"Заполните данные о маркете",
     "Search":"Поиск",
     "openCamera":"Открыть камеру",
-    "wereGettingYourLocation":"Получаем вашу геолокацию, оставайтесь на странице..."
+    "wereGettingYourLocation":"Получаем вашу геолокацию, оставайтесь на странице...",   
+    "Stop":"Приостановить",
+    "Resume":"Возобновить",
+    "taskCanceled":"Задача отменена",
+    "cancalAnyway":"Отменить",
+    "sureYouWannaCancelTask":"Вы уверены, что хотите отменить задачу?",
+    "afterCancelTaskClosedForever":"После отмены задача будет закрыта навсегда",
+    "resumingWillBeImpossible":"возобновить её будет невозможно",
+    "No":"Нет",
+    "Goods":"Продукты",
+    "chooseCategory":"Выберите категорию",
+    "noGoodYet":"Пока продуктов нет",
+    "addGood":"Добавьте продукт",
+    "Active":"Активен",
+    "Inactive":"Неактивен",
+    "requiredField": "Обязательное поле",
+    "invalidNumber": "Введите корректное число",
+    "retry":"Попробовать снова"
 }

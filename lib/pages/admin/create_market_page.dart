@@ -20,6 +20,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
   final _lng = TextEditingController();
   final _accuracy = TextEditingController();
   final _workHours = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   String? _selectedType;
 
   final List<String> _marketTypes = const [
@@ -168,173 +169,232 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
-            child: Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
+            child: Form(
+              key: _formKey,
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      newMarket.tr(),
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1F2933),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      fillInTheMarketDetails.tr(),
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Name
-                    TextField(
-                      controller: _name,
-                      decoration: _inputDecoration(
-                        label: name.tr(),
-                        icon: Icons.store_mall_directory,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextField(
-                      controller: _address,
-                      decoration: _inputDecoration(
-                        label: Address.tr(),
-                        icon: Icons.location_on_outlined,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _lat,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                              signed: false,
-                            ),
-                            decoration: _inputDecoration(
-                              label: Latitude.tr(),
-                              icon: Icons.my_location,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _lng,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                              signed: false,
-                            ),
-                            decoration: _inputDecoration(
-                              label: Longitude.tr(),
-                              icon: Icons.explore_outlined,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextField(
-                      controller: _accuracy,
-                      keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(
-                        label: allowedDistance.tr(),
-                        icon: Icons.gps_fixed,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    DropdownButtonFormField<String>(
-                      value: _selectedType,
-                      items: _marketTypes
-                          .map(
-                            (t) => DropdownMenuItem<String>(
-                              value: t,
-                              child: Text(t),
-                            ),
-                          )
-                          .toList(),
-                      decoration: _inputDecoration(
-                        label: Type.tr(),
-                        icon: Icons.category_outlined,
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedType = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    TextField(
-                      controller: _workHours,
-                      readOnly: true,
-                      onTap: _pickWorkHours,
-                      decoration: _inputDecoration(
-                        label: WorkHours.tr(),
-                        icon: Icons.access_time,
-                        suffix: IconButton(
-                          icon: const Icon(Icons.schedule),
-                          color: kPrimaryColor,
-                          onPressed: _pickWorkHours,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        newMarket.tr(),
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1F2933),
                         ),
                       ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: loading ? null : createMarket,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          disabledBackgroundColor: kPrimaryColor.withOpacity(
-                            0.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 2,
+                      const SizedBox(height: 4),
+                      Text(
+                        fillInTheMarketDetails.tr(),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
                         ),
-                        child: loading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.4,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Name
+                      TextFormField(
+                        controller: _name,
+                        decoration: _inputDecoration(
+                          label: name.tr(),
+                          icon: Icons.store_mall_directory,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return requiredField.tr();
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      TextFormField(
+                        controller: _address,
+                        decoration: _inputDecoration(
+                          label: Address.tr(),
+                          icon: Icons.location_on_outlined,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return requiredField.tr();
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _lat,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: _inputDecoration(
+                                label: Latitude.tr(),
+                                icon: Icons.my_location,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return requiredField.tr();
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return invalidNumber.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _lng,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: false,
+                                  ),
+                              decoration: _inputDecoration(
+                                label: Longitude.tr(),
+                                icon: Icons.explore_outlined,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return requiredField.tr();
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return invalidNumber.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextFormField(
+                        controller: _accuracy,
+                        keyboardType: TextInputType.number,
+                        decoration: _inputDecoration(
+                          label: allowedDistance.tr(),
+                          icon: Icons.gps_fixed,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return requiredField.tr();
+                          }
+                          if (double.tryParse(value) == null) {
+                            return invalidNumber.tr();
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<String>(
+                        value: _selectedType,
+                        items: _marketTypes
+                            .map(
+                              (t) => DropdownMenuItem<String>(
+                                value: t,
+                                child: Text(t),
+                              ),
+                            )
+                            .toList(),
+                        decoration: _inputDecoration(
+                          label: Type.tr(),
+                          icon: Icons.category_outlined,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return requiredField.tr();
+                          }
+                          return null;
+                        },
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      TextFormField(
+                        controller: _workHours,
+                        readOnly: true,
+                        onTap: _pickWorkHours,
+                        decoration: _inputDecoration(
+                          label: WorkHours.tr(),
+                          icon: Icons.access_time,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return requiredField.tr();
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: loading
+                              ? null
+                              : () {
+                                  if (_formKey.currentState!.validate()) {
+                                    createMarket();
+                                  }
+                                },
+
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            disabledBackgroundColor: kPrimaryColor.withOpacity(
+                              0.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: loading
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.4,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  Create.tr(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
                                   ),
                                 ),
-                              )
-                            : Text(
-                                Create.tr(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

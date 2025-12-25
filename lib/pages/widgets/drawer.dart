@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:price_book/keys.dart';
+import 'package:price_book/pages/admin/goods_page.dart';
 import 'package:price_book/pages/admin/markets_page.dart';
 import 'package:price_book/pages/admin/task_create_page.dart';
 // import 'package:price_book/pages/admin/task_list_page.dart';
@@ -10,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
-enum DrawerRoute { worker, markets, taskList, taskCreate }
+enum DrawerRoute { worker, markets, taskList, taskCreate, goods }
 
 class AppDrawer extends StatelessWidget {
   final DrawerRoute current;
@@ -148,6 +149,19 @@ class AppDrawer extends StatelessWidget {
                   ),
 
                   // _DrawerItem(
+                  //   icon: Icons.local_grocery_store_rounded,
+                  //   title: goodsK.tr(),
+                  //   onTap: () {
+                  //     Navigator.pop(context);
+                  //     if (current == DrawerRoute.goods) return;
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(builder: (_) => const GoodsPage()),
+                  //     );
+                  //   },
+                  // ),
+
+                  // _DrawerItem(
                   //   icon: Icons.edit,
                   //   title: statusSidebar.tr(),
                   //   onTap: () {
@@ -229,7 +243,7 @@ class AppDrawer extends StatelessWidget {
                 Navigator.pop(context);
               },
             ),
-               ListTile(
+            ListTile(
               title: const Text("Қазақша"),
               onTap: () {
                 context.setLocale(const Locale('kz'));

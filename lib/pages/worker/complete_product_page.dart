@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -206,6 +207,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   }
 
 
+
+
   Future<void> _sendData() async {
     if (lat == null || lng == null) {
       ScaffoldMessenger.of(
@@ -312,8 +315,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       debugPrint('sendData exception: $e');
       if (!mounted) return;
       setState(() => saving = false);
-      ScaffoldMessenger.of(
-        context,
+      ScaffoldMessenger.of(context,
       ).showSnackBar(SnackBar(content: Text(geolocationOrNetworkError.tr())));
     }
   }
@@ -382,22 +384,19 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "${Market.tr()}: ${widget.marketName}",
+                                    "${productsK.tr()}: ${widget.productName}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      
-                                      fontSize: 16,
-                                    ),
+                                    style: const TextStyle(fontSize: 16,
+                                      fontWeight: FontWeight.bold,),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    "${productsK.tr()}: ${widget.productName}",
+                                    "${Market.tr()}: ${widget.marketName}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      fontWeight: FontWeight.bold,
                                       color: Colors.grey[800],
                                     ),
                                   ),

@@ -195,5 +195,22 @@
     "fillInTheMarketDetails":"Fill in the market details",
     "Search":"Search",
     "openCamera":"Open camera",
-    "wereGettingYourLocation":"Getting your location, stay on the page..."
+    "wereGettingYourLocation":"Getting your location, stay on the page...",
+    "Stop":"Stop",
+    "Resume":"Resume",
+    "taskCanceled":"Task is canceled",
+    "cancalAnyway":"Cancel anyway",
+    "sureYouWannaCancelTask":"Are you sure you want to cancel your task?",
+    "afterCancelTaskClosedForever":"After canceling, the task is closed forever",
+    "resumingWillBeImpossible":"resuming it will be impossible",
+    "No":"No",
+    "Goods":"Goods",
+    "chooseCategory":"Choose category",
+    "noGoodYet":"No goods yet",
+    "addGood":"Add good",
+    "Active":"Active",
+    "Inactive":"Inactive",
+    "requiredField": "Required field",
+    "invalidNumber": "Enter valid number",
+    "retry":"Retry"
 }
