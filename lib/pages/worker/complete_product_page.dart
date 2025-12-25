@@ -10,8 +10,79 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/pages/widgets/fullscreenCamera.dart';
-import '../../keys.dart'; 
+import '../../keys.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/services.dart';
+import 'package:price_book/pages/widgets/dialogError.dart';
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  ThousandsSeparatorInputFormatter({this.allowDecimal = true});
+  final bool allowDecimal;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // оставляем только цифры (+ . , если allowDecimal)
+    final reg = allowDecimal ? RegExp(r'[0-9\.,]') : RegExp(r'[0-9]');
+    final filtered = newValue.text
+        .split('')
+        .where((c) => reg.hasMatch(c))
+        .join();
+
+    String normalized = filtered.replaceAll(',', '.');
+    String intPart = normalized;
+    String fracPart = '';
+    final hasDot = allowDecimal && normalized.contains('.');
+
+    if (hasDot) {
+      final dot = normalized.indexOf('.');
+      intPart = normalized.substring(0, dot);
+      fracPart = normalized.substring(dot + 1).replaceAll('.', '');
+    }
+
+    intPart = intPart.replaceFirst(RegExp(r'^0+(?=\d)'), '');
+
+    final formattedInt = _formatThousands(intPart);
+    final resultText = hasDot ? '$formattedInt.$fracPart' : formattedInt;
+
+    // курсор: сохраняем количество цифр слева
+    final digitsLeft = _countDigits(
+      newValue.text.substring(0, newValue.selection.end),
+    );
+    final newCursor = _cursorFromDigits(resultText, digitsLeft);
+
+    return TextEditingValue(
+      text: resultText,
+      selection: TextSelection.collapsed(offset: newCursor),
+    );
+  }
+
+  String _formatThousands(String digits) {
+    if (digits.isEmpty) return '';
+    final b = StringBuffer();
+    int count = 0;
+    for (int i = digits.length - 1; i >= 0; i--) {
+      b.write(digits[i]);
+      count++;
+      if (count % 3 == 0 && i != 0) b.write(' ');
+    }
+    return b.toString().split('').reversed.join();
+  }
+
+  int _countDigits(String s) => s.replaceAll(RegExp(r'[^0-9]'), '').length;
+
+  int _cursorFromDigits(String formatted, int digitsLeft) {
+    if (digitsLeft <= 0) return 0;
+    int seen = 0;
+    for (int i = 0; i < formatted.length; i++) {
+      if (RegExp(r'\d').hasMatch(formatted[i])) seen++;
+      if (seen == digitsLeft) return i + 1;
+    }
+    return formatted.length;
+  }
+}
 
 class CompleteGoodPage extends StatefulWidget {
   final String taskDetailId;
@@ -85,9 +156,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
         loadingLocation = false;
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Ошибка получения геолокации: $e")),
-      );
+      await AppDialogs.error(context, 'Ошибка получения геолокации: $e');
     }
   }
 
@@ -172,8 +241,10 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     return const Center(child: CircularProgressIndicator());
   }
 
-
-  Future<http.MultipartFile> _compressAndConvert(XFile xfile, String fieldName) async {
+  Future<http.MultipartFile> _compressAndConvert(
+    XFile xfile,
+    String fieldName,
+  ) async {
     if (kIsWeb) {
       return http.MultipartFile.fromBytes(
         fieldName,
@@ -184,7 +255,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     }
 
     final inputPath = xfile.path;
-    final fileName = (xfile.name.isNotEmpty) ? xfile.name : inputPath.split('/').last;
+    final fileName = (xfile.name.isNotEmpty)
+        ? xfile.name
+        : inputPath.split('/').last;
 
     final outPath =
         '${Directory.systemTemp.path}/compressed_${DateTime.now().millisecondsSinceEpoch}_$fileName';
@@ -192,7 +265,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     final compressed = await FlutterImageCompress.compressAndGetFile(
       inputPath,
       outPath,
-      quality: 50, 
+      quality: 50,
       format: CompressFormat.jpeg,
     );
 
@@ -206,25 +279,17 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     );
   }
 
-
-
-
   Future<void> _sendData() async {
     if (lat == null || lng == null) {
-      ScaffoldMessenger.of(
+        ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(geo_not_determined.tr())));
       return;
     }
 
     if (accuracy != null && accuracy! > 80) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Слабый GPS: точность ~${accuracy!.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.',
-          ),
-        ),
-      );
+
+      await AppDialogs.error(context, 'Слабый GPS: точность ~${accuracy!.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.');
       return;
     }
 
@@ -234,9 +299,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
     }
 
     if (_photoProduct == null || _photoPrice == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Нужно сделать 2 фото: товар и ценник')),
-      );
+      await AppDialogs.error(context, 'Нужно сделать 2 фото: товар и ценник');
       return;
     }
 
@@ -315,7 +378,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       debugPrint('sendData exception: $e');
       if (!mounted) return;
       setState(() => saving = false);
-      ScaffoldMessenger.of(context,
+      ScaffoldMessenger.of(
+        context,
       ).showSnackBar(SnackBar(content: Text(geolocationOrNetworkError.tr())));
     }
   }
@@ -387,8 +451,10 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                     "${productsK.tr()}: ${widget.productName}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 16,
-                                      fontWeight: FontWeight.bold,),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -435,6 +501,11 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
                                   ),
+                              inputFormatters: [
+                                ThousandsSeparatorInputFormatter(
+                                  allowDecimal: true,
+                                ),
+                              ],
                               onChanged: (_) {
                                 if (priceError) {
                                   setState(() => priceError = false);
@@ -447,6 +518,7 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                 errorText: priceError ? enterPrice.tr() : null,
                               ),
                             ),
+
                             // Row(
                             //   children: [
                             //     Icon(
