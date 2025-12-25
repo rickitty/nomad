@@ -198,5 +198,22 @@
     "fillInTheMarketDetails":"Маркет туралы ақпаратты толтырыңыз",
     "Search":"Іздеу",
     "openCamera":"Камераны ашу",
-    "wereGettingYourLocation":"Сіздің геолокацияңызды алып жатырмыз, күте тұрыңыз..."
+    "wereGettingYourLocation":"Сіздің геолокацияңызды алып жатырмыз, күте тұрыңыз...",
+    "Stop":"Тоқтата тұру",
+    "Resume":"Жалғастыру",
+    "taskCanceled":"Тапсырма тоқтатылды",
+    "cancalAnyway":"Бәрібір тоқтату",
+    "sureYouWannaCancelTask":"Тапсырмаңызды тоқтатуға сенімдісіз бе?",
+    "afterCancelTaskClosedForever":"Ол мәңгіге тоқтайды",
+    "resumingWillBeImpossible":"оны қайта жүргізу мүмкін емес",
+    "No":"Жоқ",
+    "Goods":"Өнімдер",
+    "chooseCategory":"Категория таңдаңыз",
+    "noGoodYet":"Әзірше өнімдер жоқ",
+    "addGood":"Өнім қосыңыз",
+    "Active":"Белсенді",
+    "Inactive":"Белсенді емес",
+    "requiredField": "Бағанды толтырыңыз",
+    "invalidNumber": "Дұрыс сан енгізіңіз",
+    "retry":"Қайта көру"
 }

@@ -44,7 +44,7 @@ class _WorkerPageState extends State<WorkerPage> {
 
   DateTime taskDate(dynamic t) {
     // Поменяй порядок, если у тебя приоритет другой
-    return safeParse(t["createdAt"] ?? t["startTime"] ?? t["deadLine"]);
+    return safeParse(t["createdAt"] ?? t["startTime"] ?? t["deadLine"] ?? t["completed"] ?? t[""]);
   }
 
   void onCalendarTap(DateTime day) {
@@ -182,12 +182,12 @@ class _WorkerPageState extends State<WorkerPage> {
   Future<void> _updateTaskStatus(String taskId, int newStatus) async {
     try {
       final pos =
-          await _getPosition(); // можно отправлять координаты, как в autoChangeStatus
+          await _getPosition(); 
 
       final body = <String, dynamic>{
         "status": newStatus,
-        if (pos != null) "lat": pos.latitude,
-        if (pos != null) "lng": pos.longitude,
+        "lat": pos.latitude,
+        "lng": pos.longitude,
       };
 
       final response = await ApiClient.put('/task/$taskId', context, body);

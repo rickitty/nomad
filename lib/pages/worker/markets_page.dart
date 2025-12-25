@@ -39,6 +39,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
           loading = false;
           error = false;
         });
+        _checkAndUpdateMainTaskStatus();
       } else {
         throw Exception("${errorLoading.tr()}: ${response.body}");
       }
@@ -79,6 +80,38 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
     }
   }
 
+  Future<void> _updateTaskStatus(String taskId) async {
+    try {
+      final pos = await _getPosition();
+
+      final body = <String, dynamic>{
+        "status": 4,
+        if (pos != null) "lat": pos.latitude,
+        if (pos != null) "lng": pos.longitude,
+      };
+
+      final response = await ApiClient.put('/task/$taskId', context, body);
+
+      if (response.statusCode == 200) {
+        debugPrint("Main task marked as Completed");
+      }
+    } catch (e) {
+      debugPrint("updateTaskStatus error: $e");
+    }
+  }
+
+  void _checkAndUpdateMainTaskStatus() {
+    if (taskObjects.isEmpty) return;
+
+    final allCompleted = taskObjects.every((t) => t["status"] == "Completed");
+
+    if (allCompleted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateTaskStatus(widget.taskId);
+      });
+    }
+  }
+
   Future<void> updateTaskDetailStatus(
     String taskDetailId,
     int newStatus,
@@ -98,10 +131,8 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
         body,
       );
       if (responce.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(status_updated.tr())));
         fetchTaskObjects();
+        return jsonDecode(responce.body);
       } else {
         ScaffoldMessenger.of(
           context,
@@ -272,6 +303,20 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                               final double progress = totalGoods == 0
                                   ? 0
                                   : completedCount / totalGoods;
+                              if (totalGoods > 0 &&
+                                  completedCount == totalGoods &&
+                                  status != "Completed" &&
+                                  status != "Stopped" &&
+                                  status != "Canceled") {
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  updateTaskDetailStatus(
+                                    task["id"].toString(),
+                                    3,
+                                  );
+                                });
+                              }
 
                               return TweenAnimationBuilder<double>(
                                 tween: Tween(begin: 0, end: 1),
@@ -377,6 +422,78 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
                                                 ],
                                               ),
                                             ),
+                                            if (status != "Stopped" &&
+                                                status != "Canceled" &&
+                                                status != "Completed")
+                                              Row(
+                                                children: [
+                                                  IconButton(
+                                                    tooltip: stop.tr(),
+                                                    onPressed: () async {
+                                                      await updateTaskDetailStatus(
+                                                        task["id"].toString(),
+                                                        4,
+                                                      );
+
+                                                      setState(() {});
+                                                    },
+
+                                                    icon: Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            6,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.pause,
+                                                        size: 18,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+
+                                                  IconButton(
+                                                    tooltip: cancel.tr(),
+                                                    onPressed: () async {
+                                                      final confirm =
+                                                          await showCancelConfirmDialog();
+                                                      if (!confirm) return;
+
+                                                      await updateTaskDetailStatus(
+                                                        task["id"].toString(),
+                                                        5,
+                                                      );
+
+                                                      setState(() {});
+                                                    },
+
+                                                    icon: Container(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                            6,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.close,
+                                                        size: 18,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                           ],
                                         ),
 
@@ -489,45 +606,9 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
 
                                         Align(
                                           alignment: Alignment.centerRight,
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      WorkerObjectProductsPage(
-                                                        taskObjects:
-                                                            taskObjects,
-                                                        objectId:
-                                                            task["id"] ?? "",
-                                                      ),
-                                                ),
-                                              );
-                                              if (status == "Assigned") {
-                                                updateTaskDetailStatus(
-                                                  widget.taskId,
-                                                  2,
-                                                );
-                                              }
-                                            },
-                                            icon: const Icon(
-                                              Icons.arrow_forward_ios,
-                                              size: 16,
-                                            ),
-                                            label: Text(ktavaram.tr()),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue[300],
-                                              foregroundColor: Colors.white,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 18,
-                                                    vertical: 10,
-                                                  ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                            ),
+                                          child: buildActionButton(
+                                            status: status,
+                                            task: task,
                                           ),
                                         ),
                                       ],
@@ -544,6 +625,101 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<bool> showCancelConfirmDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.red),
+                  SizedBox(width: 8),
+                  Text(cancelAnyway.tr()),
+                ],
+              ),
+              content: Text(
+                "${sureYouWannaCancelTask.tr()}\n\n"
+                "${afterCancelTaskClosedForever.tr()}, "
+                "${resumingWillBeImpossible.tr()}.",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(no.tr()),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(cancel.tr()),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+  }
+
+  Widget buildActionButton({required String status, required Map task}) {
+    // ❌ Отменено
+    if (status == "Canceled") {
+      return Text(
+        taskCanceled.tr(),
+        style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+      );
+    }
+
+    // ✅ Завершено
+    if (status == "Completed") {
+      return ElevatedButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WorkerObjectProductsPage(
+              taskId: widget.taskId,
+              objectId: task["id"],
+            ),
+          ),
+        ),
+        child: Text(complete.tr()),
+      );
+    }
+
+    // ⏸ Остановлено
+    if (status == "Stopped") {
+      return ElevatedButton(
+        onPressed: () async {
+          await updateTaskDetailStatus(task["id"].toString(), 2); // InProgress
+          await fetchTaskObjects();
+        },
+        child: Text(resume.tr()),
+      );
+    }
+
+    // ▶ Assigned / InProgress
+    return ElevatedButton.icon(
+      icon: const Icon(Icons.arrow_forward_ios, size: 16),
+      label: Text(ktavaram.tr()),
+      onPressed: () async {
+        if (status == "Assigned") {
+          await updateTaskDetailStatus(task["id"].toString(), 2);
+        }
+
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WorkerObjectProductsPage(
+              taskId: widget.taskId,
+              objectId: task["id"],
+            ),
+          ),
+        );
+
+        fetchTaskObjects();
+      },
     );
   }
 }

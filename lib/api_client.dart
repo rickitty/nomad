@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:price_book/config.dart';
@@ -35,6 +36,27 @@ class ApiClient {
         body: jsonEncode(body),
       );
     }, context);
+  }
+  static Future<Uint8List> getBytes(
+    String path,
+    BuildContext context, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await _send(() async {
+      final token = await Config.getToken();
+      final h = <String, String>{
+        if (token != null) 'Authorization': 'Bearer $token',
+        'Accept': 'image/*',
+        ...?headers,
+      };
+      return http.get(Uri.parse('$QYZ_API_BASE$path'), headers: h);
+    }, context);
+
+    if (response.statusCode != 200) {
+      throw Exception('getBytes failed ${response.statusCode}: ${response.body}');
+    }
+
+    return response.bodyBytes;
   }
 
   /// ---------- PUT ----------
