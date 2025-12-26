@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/keys.dart';
+import 'package:price_book/pages/widgets/dialogError.dart';
 import 'package:price_book/pages/widgets/loading_dialog.dart';
 import 'products_page.dart';
 
@@ -187,14 +188,10 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
         fetchTaskObjects();
         return jsonDecode(responce.body);
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error: ${responce.body}")));
+        await AppDialogs.error(context, 'Error: ${responce.body}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      await AppDialogs.error(context, 'Error: $e');
     } finally {
       hideLoadingDialog(context);
     }

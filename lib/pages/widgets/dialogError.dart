@@ -27,7 +27,7 @@ class AppDialogs {
   static Future<void> info(
     BuildContext context,
     String message, {
-    String title = 'Информация',
+    String title = 'Ошибка',
   }) async {
     if (!context.mounted) return;
 

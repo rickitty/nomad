@@ -9,6 +9,8 @@ import 'package:price_book/pages/widgets/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../widgets/dialogError.dart';
+
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
 class CreateTaskPage extends StatefulWidget {
@@ -75,9 +77,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   Future<void> saveTask() async {
     if (selectedMarketIds.isEmpty || selectedDate == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("fill_all_the_fields".tr())));
+      await AppDialogs.error(context, fillAllTheFields.tr());
       return;
     }
 
@@ -101,9 +101,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(taskIsMade.tr())));
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("${error.tr()}: ${res.body}")));
+        await AppDialogs.error(context, '${error.tr()}: ${res.body}');
       }
     } catch (e) {
       ScaffoldMessenger.of(

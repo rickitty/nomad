@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:price_book/api_client.dart';
+import 'package:price_book/pages/widgets/dialogError.dart';
 import 'package:price_book/pages/widgets/drawer.dart';
 import 'package:price_book/keys.dart';
 import 'package:price_book/pages/widgets/loading_dialog.dart';
@@ -97,14 +98,11 @@ class _WorkerPageState extends State<WorkerPage> {
           tasks = list;
         });
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: ${res.body}')));
+        await AppDialogs.error(context, 'Ошибка загрузки: ${res.body}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('')));
+      await AppDialogs.error(context, 'Ошибка: $e');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -182,9 +180,7 @@ class _WorkerPageState extends State<WorkerPage> {
         return false;
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
+      await AppDialogs.error(context, "${error.tr()}");
       return false;
     }
   }

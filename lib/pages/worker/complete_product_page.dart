@@ -25,7 +25,6 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // оставляем только цифры (+ . , если allowDecimal)
     final reg = allowDecimal ? RegExp(r'[0-9\.,]') : RegExp(r'[0-9]');
     final filtered = newValue.text
         .split('')
@@ -47,8 +46,6 @@ class ThousandsSeparatorInputFormatter extends TextInputFormatter {
 
     final formattedInt = _formatThousands(intPart);
     final resultText = hasDot ? '$formattedInt.$fracPart' : formattedInt;
-
-    // курсор: сохраняем количество цифр слева
     final digitsLeft = _countDigits(
       newValue.text.substring(0, newValue.selection.end),
     );
@@ -370,12 +367,9 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       } else {
         final body = await response.stream.bytesToString();
         debugPrint('update taskDetail error: ${response.statusCode} $body');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${errorWhileSavingTheProduct.tr()} (${response.statusCode})',
-            ),
-          ),
+        await AppDialogs.error(
+          context,
+          '${errorWhileSavingTheProduct.tr()} (${response.statusCode})',
         );
       }
     } catch (e) {
