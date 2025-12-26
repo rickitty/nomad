@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:price_book/api_client.dart';
 import 'dart:convert';
 import 'package:price_book/keys.dart';
+import 'package:price_book/pages/worker/map_picker_page.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
@@ -21,6 +22,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
   final _accuracy = TextEditingController();
   final _workHours = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _useMap = false;
   String? _selectedType;
 
   final List<String> _marketTypes = const [
@@ -86,7 +88,6 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
         context,
       ).showSnackBar(SnackBar(content: Text("Ошибка сети: $e")));
     }
-
     setState(() => loading = false);
   }
 
@@ -141,6 +142,17 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
       _closeTime = close;
       _workHours.text = _formatTimeRange(open, close);
     });
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _address.dispose();
+    _lat.dispose();
+    _lng.dispose();
+    _accuracy.dispose();
+    _workHours.dispose();
+    super.dispose();
   }
 
   String _formatTimeRange(TimeOfDay start, TimeOfDay end) {
@@ -217,72 +229,136 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
 
                       const SizedBox(height: 12),
 
-                      TextFormField(
-                        controller: _address,
-                        decoration: _inputDecoration(
-                          label: Address.tr(),
-                          icon: Icons.location_on_outlined,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return requiredField.tr();
-                          }
-                          return null;
+                      ToggleButtons(
+                        isSelected: [_useMap, !_useMap],
+                        onPressed: (index) {
+                          setState(() {
+                            _useMap = index == 0;
+                          });
                         },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Row(
+                        borderRadius: BorderRadius.circular(12),
+                        selectedColor: Colors.white,
+                        fillColor: kPrimaryColor,
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _lat,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: _inputDecoration(
-                                label: Latitude.tr(),
-                                icon: Icons.my_location,
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return requiredField.tr();
-                                }
-                                if (double.tryParse(value) == null) {
-                                  return invalidNumber.tr();
-                                }
-                                return null;
-                              },
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Icon(Icons.map),
+                                SizedBox(width: 6),
+                                Text(onMap.tr()),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _lng,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                    signed: false,
-                                  ),
-                              decoration: _inputDecoration(
-                                label: Longitude.tr(),
-                                icon: Icons.explore_outlined,
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return requiredField.tr();
-                                }
-                                if (double.tryParse(value) == null) {
-                                  return invalidNumber.tr();
-                                }
-                                return null;
-                              },
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_location),
+                                SizedBox(width: 6),
+                                Text(byHand.tr()),
+                              ],
                             ),
                           ),
                         ],
                       ),
+
+                      const SizedBox(height: 12),
+
+                      if (_useMap) ...[
+                        ElevatedButton.icon(
+                          onPressed: _openMapPicker,
+                          icon: const Icon(Icons.place),
+                          label: const Text("Выбрать точку на карте"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        TextFormField(
+                          controller: _address,
+                          readOnly: true,
+                          decoration: _inputDecoration(
+                            label: Address.tr(),
+                            icon: Icons.location_on_outlined,
+                          ),
+                          validator: (v) => v == null || v.isEmpty
+                              ? requiredField.tr()
+                              : null,
+                        ),
+                      ] else ...[
+                        TextFormField(
+                          controller: _address,
+                          decoration: _inputDecoration(
+                            label: Address.tr(),
+                            icon: Icons.location_on_outlined,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return requiredField.tr();
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _lat,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                decoration: _inputDecoration(
+                                  label: Latitude.tr(),
+                                  icon: Icons.my_location,
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return requiredField.tr();
+                                  }
+                                  if (double.tryParse(value) == null) {
+                                    return invalidNumber.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _lng,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                      signed: false,
+                                    ),
+                                decoration: _inputDecoration(
+                                  label: Longitude.tr(),
+                                  icon: Icons.explore_outlined,
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return requiredField.tr();
+                                  }
+                                  if (double.tryParse(value) == null) {
+                                    return invalidNumber.tr();
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+
                       const SizedBox(height: 12),
 
                       TextFormField(
@@ -402,5 +478,20 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MapPickerPage()),
+    );
+
+    if (result != null) {
+      setState(() {
+        _lat.text = result["lat"].toString();
+        _lng.text = result["lng"].toString();
+        _address.text = result["address"];
+      });
+    }
   }
 }

@@ -212,5 +212,12 @@
     "Inactive":"Inactive",
     "requiredField": "Required field",
     "invalidNumber": "Enter valid number",
-    "retry":"Retry"
+    "retry":"Retry",
+    "loading":"Loading...",
+    "updatingStatus":"Updating status...",
+    "openingTask":"Opening task",
+    "sendingData":"Sending data",
+    "onMap":"On map",
+    "byHand":"By hand",
+    "choosePoint":"Choose point"
 }

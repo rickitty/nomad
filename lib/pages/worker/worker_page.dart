@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/pages/widgets/drawer.dart';
 import 'package:price_book/keys.dart';
+import 'package:price_book/pages/widgets/loading_dialog.dart';
 
 import 'markets_page.dart';
 
@@ -44,7 +45,13 @@ class _WorkerPageState extends State<WorkerPage> {
 
   DateTime taskDate(dynamic t) {
     // Поменяй порядок, если у тебя приоритет другой
-    return safeParse(t["createdAt"] ?? t["startTime"] ?? t["deadLine"] ?? t["completed"] ?? t[""]);
+    return safeParse(
+      t["createdAt"] ??
+          t["startTime"] ??
+          t["deadLine"] ??
+          t["completed"] ??
+          t[""],
+    );
   }
 
   void onCalendarTap(DateTime day) {
@@ -60,7 +67,13 @@ class _WorkerPageState extends State<WorkerPage> {
   List get visibleTasks {
     final list = List.of(tasks);
 
-    list.sort((a, b) => taskDate(b).compareTo(taskDate(a)));
+    list.sort((a, b) {
+      final sa = _statusOrder(parseStatus(a["status"]));
+      final sb = _statusOrder(parseStatus(b["status"]));
+
+      if (sa != sb) return sa.compareTo(sb);
+      return taskDate(b).compareTo(taskDate(a));
+    });
 
     if (_filterDay == null) return list;
 
@@ -118,8 +131,11 @@ class _WorkerPageState extends State<WorkerPage> {
   }
 
   Future<void> _openTask(String taskId, int statusCode) async {
+    showLoadingDialog(context, text: openingTask.tr());
     final canOpen = await autoChangeStatus(taskId, statusCode);
     if (!canOpen) return;
+
+    hideLoadingDialog(context);
 
     await Navigator.push(
       context,
@@ -133,14 +149,13 @@ class _WorkerPageState extends State<WorkerPage> {
 
   Future<bool> autoChangeStatus(String taskId, int currentStatus) async {
     if (currentStatus != 1) return true;
-
     Position pos;
     try {
       pos = await _getPosition();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Не удалось получить геопозицию: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${errorLoading}: $e')));
       return false;
     }
 
@@ -174,99 +189,100 @@ class _WorkerPageState extends State<WorkerPage> {
     }
   }
 
-  Future<void> _updateTaskStatus(String taskId, int newStatus) async {
-    try {
-      final pos =
-          await _getPosition(); 
+  // Future<void> _updateTaskStatus(String taskId, int newStatus) async {
+  //   try {
+  //     final pos = await _getPosition();
+  //     showLoadingDialog(context, text: updatingStatus.tr());
+  //     final body = <String, dynamic>{
+  //       "status": newStatus,
+  //       "lat": pos.latitude,
+  //       "lng": pos.longitude,
+  //     };
 
-      final body = <String, dynamic>{
-        "status": newStatus,
-        "lat": pos.latitude,
-        "lng": pos.longitude,
-      };
+  //     final response = await ApiClient.put('/task/$taskId', context, body);
 
-      final response = await ApiClient.put('/task/$taskId', context, body);
+  //     if (response.statusCode == 200) {
+  //       ScaffoldMessenger.of(
+  //         context,
+  //       ).showSnackBar(SnackBar(content: Text(status_updated.tr())));
+  //       await loadAllTasks();
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("${error.tr()}: ${response.body}")),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
+  //   } finally {
+  //     hideLoadingDialog(context);
+  //   }
+  // }
 
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(status_updated.tr())));
-        await loadAllTasks();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${error.tr()}: ${response.body}")),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
-    }
-  }
+  // void _showStatusDialog(String taskId, int currentStatus) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) {
+  //       int selected = currentStatus;
 
-  void _showStatusDialog(String taskId, int currentStatus) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        int selected = currentStatus;
-
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            ChangeStatus.tr(),
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          content: StatefulBuilder(
-            builder: (context, setStateDialog) {
-              return DropdownButtonFormField<int>(
-                value: selected,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                ),
-                items: taskStatusKeys.entries.map((e) {
-                  return DropdownMenuItem(
-                    value: e.key,
-                    child: Text("${e.key} - ${e.value.tr()}"),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setStateDialog(() => selected = value);
-                },
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(cancel.tr()),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _updateTaskStatus(taskId, selected);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(save.tr()),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  //       return AlertDialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(16),
+  //         ),
+  //         title: Text(
+  //           ChangeStatus.tr(),
+  //           style: const TextStyle(fontWeight: FontWeight.w600),
+  //         ),
+  //         content: StatefulBuilder(
+  //           builder: (context, setStateDialog) {
+  //             return DropdownButtonFormField<int>(
+  //               value: selected,
+  //               decoration: InputDecoration(
+  //                 border: OutlineInputBorder(
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 contentPadding: const EdgeInsets.symmetric(
+  //                   horizontal: 12,
+  //                   vertical: 10,
+  //                 ),
+  //               ),
+  //               items: taskStatusKeys.entries.map((e) {
+  //                 return DropdownMenuItem(
+  //                   value: e.key,
+  //                   child: Text("${e.key} - ${e.value.tr()}"),
+  //                 );
+  //               }).toList(),
+  //               onChanged: (value) {
+  //                 if (value == null) return;
+  //                 setStateDialog(() => selected = value);
+  //               },
+  //             );
+  //           },
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context),
+  //             child: Text(cancel.tr()),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               Navigator.pop(context);
+  //               _updateTaskStatus(taskId, selected);
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: kPrimaryColor,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(10),
+  //               ),
+  //             ),
+  //             child: Text(save.tr()),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   @override
   void initState() {
@@ -314,8 +330,8 @@ class _WorkerPageState extends State<WorkerPage> {
       case 4:
         return Colors.green;
       case 5:
-      case 6:
         return Colors.red;
+      case 6:
       case 2:
       case 3:
         return Colors.orange;
@@ -326,24 +342,33 @@ class _WorkerPageState extends State<WorkerPage> {
     }
   }
 
+  List<int> _statusPriority = [
+    2, // InProgress
+    1, // Assigned
+    6, // Stopped
+    4, // Completed
+    5, // Canceled
+  ];
+  int _statusOrder(int code) {
+    final index = _statusPriority.indexOf(code);
+    return index == -1 ? 999 : index;
+  }
+
   Widget buildStatusBadge(int code, String taskId) {
     final color = statusColor(code);
     final label = statusText(code);
 
-    return GestureDetector(
-      onTap: () => _showStatusDialog(taskId, code), // ручная смена
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

@@ -235,6 +235,7 @@ class _WorkerObjectProductsPageState extends State<WorkerObjectProductsPage> {
   Map<String, dynamic>? object;
   bool loading = true;
   bool error = false;
+  bool _categoryInitialized = false;
   String selectedCategory = 'Все';
 
   Future<void> fetchObject() async {
@@ -342,6 +343,10 @@ class _WorkerObjectProductsPageState extends State<WorkerObjectProductsPage> {
   Widget build(BuildContext context) {
     final locale = context.locale.languageCode;
 
+    if (!_categoryInitialized) {
+      selectedCategory = locale == 'kz' ? 'Барлығы' : 'Все';
+      _categoryInitialized = true;
+    }
     String getName(dynamic raw) {
       if (raw == null) return "";
       if (raw is Map) {
@@ -575,7 +580,6 @@ class _WorkerObjectProductsPageState extends State<WorkerObjectProductsPage> {
                               (good["photoProduct"]?.toString() ?? "").trim();
                           final photoPrice =
                               (good["photoPrice"]?.toString() ?? "").trim();
-                          final goodIdStr = good["goodId"]?.toString() ?? "";
                           final priceUnit = (good["priceUnit"] ?? "")
                               .toString()
                               .trim();
@@ -635,12 +639,12 @@ class _WorkerObjectProductsPageState extends State<WorkerObjectProductsPage> {
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      if (completed && price != null) ...[
+                                      if (completed) ...[
                                         const SizedBox(height: 4),
                                         Text(
                                           '${price.tr()}: $priceUnit',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.w600,
                                             color: Colors.grey[800],
                                           ),
@@ -724,7 +728,7 @@ class _WorkerObjectProductsPageState extends State<WorkerObjectProductsPage> {
                                           child: Text(
                                             redo.tr(),
                                             style: const TextStyle(
-                                              fontSize: 13,
+                                              fontSize: 16,
                                             ),
                                           ),
                                         )

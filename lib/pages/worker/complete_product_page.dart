@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/pages/widgets/fullscreenCamera.dart';
+import 'package:price_book/pages/widgets/loading_dialog.dart';
 import '../../keys.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/services.dart';
@@ -280,16 +281,19 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
   }
 
   Future<void> _sendData() async {
+    showLoadingDialog(context, text: sendingData.tr());
     if (lat == null || lng == null) {
-        ScaffoldMessenger.of(
+      ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(geo_not_determined.tr())));
       return;
     }
 
     if (accuracy != null && accuracy! > 80) {
-
-      await AppDialogs.error(context, 'Слабый GPS: точность ~${accuracy!.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.');
+      await AppDialogs.error(
+        context,
+        'Слабый GPS: точность ~${accuracy!.toStringAsFixed(0)}м. Включите GPS/выйдите ближе к окну и нажмите ещё раз.',
+      );
       return;
     }
 
@@ -381,6 +385,8 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(geolocationOrNetworkError.tr())));
+    } finally {
+      hideLoadingDialog(context);
     }
   }
 
@@ -626,12 +632,16 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                             if (showCameraSection) ...[
                               const SizedBox(height: 12),
                               SizedBox(
-                                height: 190,
+                                height: 220,
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: Column(
                                         children: [
+                                          Text(
+                                            productK.tr(),
+                                            style: TextStyle(fontSize: 16),
+                                          ),
                                           Expanded(
                                             child: ClipRRect(
                                               borderRadius:
@@ -667,6 +677,10 @@ class _CompleteGoodPageState extends State<CompleteGoodPage> {
                                     Expanded(
                                       child: Column(
                                         children: [
+                                          Text(
+                                            price.tr(),
+                                            style: TextStyle(fontSize: 16),
+                                          ),
                                           Expanded(
                                             child: ClipRRect(
                                               borderRadius:

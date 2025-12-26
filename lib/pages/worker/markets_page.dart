@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:price_book/api_client.dart';
 import 'package:price_book/keys.dart';
+import 'package:price_book/pages/widgets/loading_dialog.dart';
 import 'products_page.dart';
 
 class WorkerTaskObjectsPage extends StatefulWidget {
@@ -20,6 +21,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
   List<Map<String, dynamic>> taskObjects = [];
   bool loading = true;
   bool error = false;
+  List tasks = [];
 
   String getLocalized(Map<String, dynamic>? data, String locale) {
     if (data == null) return "";
@@ -80,34 +82,84 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
     }
   }
 
-  Future<void> _updateTaskStatus(String taskId) async {
+  Future<void> loadAllTasks() async {
+    setState(() => loading = true);
+
+    try {
+      final res = await ApiClient.get('/task', context);
+
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(utf8.decode(res.bodyBytes));
+
+        if (!mounted) return;
+        setState(() {
+          tasks = list;
+        });
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка загрузки: ${res.body}')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  String? getMainTaskStatusById(String taskId, List tasks) {
+    try {
+      final task = tasks.firstWhere((t) => t["id"] == taskId);
+      return task["status"]?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _updateTaskStatus(String taskId, int status) async {
     try {
       final pos = await _getPosition();
 
       final body = <String, dynamic>{
-        "status": 4,
+        "status": status,
         if (pos != null) "lat": pos.latitude,
         if (pos != null) "lng": pos.longitude,
       };
 
-      final response = await ApiClient.put('/task/$taskId', context, body);
-
-      if (response.statusCode == 200) {
-        debugPrint("Main task marked as Completed");
-      }
+      await ApiClient.put('/task/$taskId', context, body);
     } catch (e) {
       debugPrint("updateTaskStatus error: $e");
+    } finally {
+      hideLoadingDialog(context);
     }
   }
 
   void _checkAndUpdateMainTaskStatus() {
-    if (taskObjects.isEmpty) return;
+    if (taskObjects.isEmpty || tasks.isEmpty) return;
+
+    final status = getMainTaskStatusById(widget.taskId, tasks);
+    if (status == null) return;
 
     final allCompleted = taskObjects.every((t) => t["status"] == "Completed");
+    final allCanceled = taskObjects.every((t) => t["status"] == "Canceled");
+    final allStopped = taskObjects.every((t) => t["status"] == "Stopped");
 
-    if (allCompleted) {
+    if (allCompleted && status != "Completed") {
+      showLoadingDialog(context, text: updatingStatus.tr());
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _updateTaskStatus(widget.taskId);
+        _updateTaskStatus(widget.taskId, 4);
+      });
+    } else if (allCanceled && status != "Canceled") {
+      showLoadingDialog(context, text: updatingStatus.tr());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateTaskStatus(widget.taskId, 5);
+      });
+    } else if (allStopped && status != "Stopped") {
+      showLoadingDialog(context, text: updatingStatus.tr());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateTaskStatus(widget.taskId, 6);
       });
     }
   }
@@ -117,6 +169,7 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
     int newStatus,
   ) async {
     try {
+      showLoadingDialog(context, text: updatingStatus.tr());
       final pos = await _getPosition();
 
       final body = <String, dynamic>{
@@ -142,13 +195,17 @@ class _WorkerTaskObjectsPageState extends State<WorkerTaskObjectsPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    } finally {
+      hideLoadingDialog(context);
     }
   }
 
   @override
   void initState() {
     super.initState();
-    fetchTaskObjects();
+    loadAllTasks().then((_) {
+      fetchTaskObjects();
+    });
   }
 
   @override

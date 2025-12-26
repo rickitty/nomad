@@ -27,7 +27,7 @@
   "inprogressStatus": "Орындалуда",
   "awaitingreviewStatus": "Тексеруді күтуде",
   "completedStatus": "Аяқталды",
-  "canceledStatus": "Тоқталды",
+  "canceledStatus": "Жойылды",
   "stopedStatus": "Тоқтатылды",
     "Password": "Құпиясөз",
     "Did_not_receive_the_code": "Код келмеді ме?",
@@ -215,5 +215,12 @@
     "Inactive":"Белсенді емес",
     "requiredField": "Бағанды толтырыңыз",
     "invalidNumber": "Дұрыс сан енгізіңіз",
-    "retry":"Қайта көру"
+    "retry":"Қайта көру",
+    "loading":"Жүктелуде...",
+    "updatingStatus":"Статус жаңартылуда...",
+    "openingTask":"Тапсырма ашылуда...",
+    "sendingData":"Ақпарат жүктелуде...",
+    "onMap":"Картада",
+    "byHand":"Қолмен",
+    "choosePoint":"Нүктені таңдаңыз"
 }
