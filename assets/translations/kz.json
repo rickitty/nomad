@@ -222,5 +222,15 @@
     "sendingData":"Ақпарат жүктелуде...",
     "onMap":"Картада",
     "byHand":"Қолмен",
-    "choosePoint":"Нүктені таңдаңыз"
+    "choosePoint":"Нүктені таңдаңыз",
+    "supermarket":"Супермаркет",
+    "minimarket":"Минимаркет",
+    "kiosk":"Киоск",
+    "hypermarket":"Гипермаркет",
+    "openingTime":"Ашылу уақыты",
+    "closingTime":"Жабылу уақыты",
+    "creatingMarket":"Маркет қосылуда...",
+    "addressNotFound":"Мекенжай табылмады",
+    "cityStreetKz":"Қала, көше (Қазақстан)",
+    "chooseCity":"Қаланы таңдаңыз"
 }

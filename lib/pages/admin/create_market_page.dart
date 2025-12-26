@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:price_book/api_client.dart';
 import 'dart:convert';
 import 'package:price_book/keys.dart';
-import 'package:price_book/pages/worker/map_picker_page.dart';
+import 'package:price_book/pages/widgets/loading_dialog.dart';
+import 'package:price_book/pages/widgets/map_picker_page.dart';
 
 const Color kPrimaryColor = Color.fromRGBO(144, 202, 249, 1);
 
@@ -25,12 +26,11 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
   bool _useMap = false;
   String? _selectedType;
 
-  final List<String> _marketTypes = const [
-    'Супермаркет',
-    'Минимаркет',
-    'Киоск',
-    'Гипермаркет',
-    'Магазин у дома',
+  final List<String> _marketTypes = [
+    supermarket.tr(),
+    minimarket.tr(),
+    kiosk.tr(),
+    hypermarket.tr(),
   ];
 
   bool loading = false;
@@ -40,7 +40,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
 
   Future<void> createMarket() async {
     setState(() => loading = true);
-
+    showLoadingDialog(context, text: creatingMarket.tr());
     final Map<String, dynamic> body = {
       "name": _name.text,
       "address": _address.text,
@@ -86,7 +86,9 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Ошибка сети: $e")));
+      ).showSnackBar(SnackBar(content: Text("${error.tr()}: $e")));
+    } finally {
+      hideLoadingDialog(context);
     }
     setState(() => loading = false);
   }
@@ -124,7 +126,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
     final open = await showTimePicker(
       context: context,
       initialTime: _openTime ?? now,
-      helpText: "Время открытия",
+      helpText: openingTime.tr(),
     );
 
     if (open == null) return;
@@ -132,7 +134,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
     final close = await showTimePicker(
       context: context,
       initialTime: _closeTime ?? open,
-      helpText: "Время закрытия",
+      helpText: closingTime.tr(),
     );
 
     if (close == null) return;
@@ -269,7 +271,7 @@ class _CreateMarketPageState extends State<CreateMarketPage> {
                         ElevatedButton.icon(
                           onPressed: _openMapPicker,
                           icon: const Icon(Icons.place),
-                          label: const Text("Выбрать точку на карте"),
+                          label: Text(choosePoint.tr()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kPrimaryColor,
                             minimumSize: const Size(double.infinity, 48),

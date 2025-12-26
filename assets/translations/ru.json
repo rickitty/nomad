@@ -219,5 +219,15 @@
     "sendingData":"Отправляем данные...",
     "onMap":"На карте",
     "byHand":"Вручную",
-    "choosePoint":"Выберите точку"
+    "choosePoint":"Выберите точку",
+    "supermarket":"Супермаркет",
+    "minimarket":"Минимаркет",
+    "kiosk":"Киоск",
+    "hypermarket":"Гипермаркет",
+    "openingTime":"Время открытия",
+    "closingTime":"Время закрытия",
+    "creatingMarket":"Создаем маркет...",
+    "addressNotFound":"Адрес не найден",
+    "cityStreetKz":"Город, улица (Казахстан)",
+    "chooseCity":"Выберите город"
 }
